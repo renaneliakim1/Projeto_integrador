@@ -13,10 +13,17 @@ interface Question {
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY;
 const DEFAULT_MODEL = "gemini-pro"; // Corrigido para o formato aceito pela API
 
+
 export const useGenerativeAI = (subject: string, educationalLevel: string, modelName: string = DEFAULT_MODEL) => {
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+
+  // Função placeholder para debug (removida chamada inválida)
+  const listModels = useCallback(() => {
+    console.warn("A listagem de modelos não é suportada pela biblioteca @google/generative-ai. Consulte a documentação oficial ou o Google Cloud Console.");
+  }, []);
 
   const generateContent = useCallback(async () => {
     if (!API_KEY) {
@@ -34,7 +41,13 @@ export const useGenerativeAI = (subject: string, educationalLevel: string, model
 
     try {
       const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({ model: modelName });
+      let model;
+      try {
+        model = genAI.getGenerativeModel({ model: modelName });
+        // Testa também com o outro formato se falhar
+      } catch {
+        model = genAI.getGenerativeModel({ model: modelName === "gemini-pro" ? "models/gemini-pro" : "gemini-pro" });
+      }
 
       const prompt = `Gere 5 perguntas de múltipla escolha sobre "${subject}" para um estudante com nível de escolaridade "${educationalLevel}". Cada pergunta deve ter 4 opções e indicar a opção correta (índice 0-3). Atribua também um nível de dificuldade (easy, medium, hard) a cada pergunta. A saída deve ser um array JSON de objetos, cada um com os campos 'id', 'question', 'options', 'correct' e 'difficulty'. Certifique-se de que a resposta seja um JSON válido e nada mais.`;
 
@@ -70,13 +83,14 @@ export const useGenerativeAI = (subject: string, educationalLevel: string, model
       let msg = err.message || "Erro desconhecido";
       if (msg.includes("404") || msg.includes("not found")) {
         msg = "Modelo não encontrado ou não habilitado para sua chave. Verifique o nome do modelo e permissões da API no Google Cloud Console.";
+        listModels();
       }
       setError(`Falha ao gerar perguntas: ${msg}`);
       setGeneratedQuestions([]);
     } finally {
       setLoading(false);
     }
-  }, [subject, educationalLevel, modelName]);
+  }, [subject, educationalLevel, modelName, listModels]);
 
   useEffect(() => {
     generateContent();
