@@ -31,8 +31,8 @@ const Login = () => {
       title: "Login realizado!",
       description: "Bem-vindo de volta ao EdGame!",
     });
-    
-    navigate("/");
+    // Redireciona para o dashboard após login
+    navigate("/dashboard");
   };
 
   return (

@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { BookOpen, Trophy, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
+  const location = useLocation();
   return (
     <header className="w-full border-b bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-4">
@@ -21,9 +22,11 @@ const Header = () => {
           </div>
           
             <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/" className="text-foreground hover:text-primary transition-colors">
-                Início
-              </Link>
+              {location.pathname !== "/" && (
+                <Link to="/" className="text-foreground hover:text-primary transition-colors">
+                  Início
+                </Link>
+              )}
               <Link to="/subjects" className="text-foreground hover:text-primary transition-colors">
                 Disciplinas
               </Link>
