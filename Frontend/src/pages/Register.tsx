@@ -80,13 +80,15 @@ const Register = () => {
 
   const handleCadastro = () => {
     // Simulação de cadastro
+    localStorage.setItem('userEmail', email);
     localStorage.setItem('userEducationalLevel', escolaridade);
     localStorage.setItem('userPreferredSubject', disciplina);
+    window.dispatchEvent(new Event('user-auth-changed'));
     toast({
       title: "Conta criada com sucesso!",
       description: "Bem-vindo ao EdGame! Sua conta foi criada.",
     });
-    navigate("/");
+    navigate("/quiz-nivelamento");
   };
 
   return (
