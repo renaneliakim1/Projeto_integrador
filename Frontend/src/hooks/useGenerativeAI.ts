@@ -111,7 +111,7 @@ interface Question {
 }
 
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY;
-const DEFAULT_MODEL = "gemini-pro";
+const DEFAULT_MODEL = "gemini-1.5-flash-latest";
 
 export const useGenerativeAI = (
   subject: string,
@@ -140,15 +140,7 @@ export const useGenerativeAI = (
 
     try {
       const genAI = new GoogleGenerativeAI(API_KEY);
-
-      let model;
-      try {
-        model = genAI.getGenerativeModel({ model: modelName });
-      } catch {
-        model = genAI.getGenerativeModel({
-          model: modelName === "gemini-pro" ? "models/gemini-pro" : "gemini-pro",
-        });
-      }
+      const model = genAI.getGenerativeModel({ model: modelName });
 
       const prompt = `Gere 10 perguntas de múltipla escolha sobre "${subject}" para um estudante com nível de escolaridade "${educationalLevel}". 
 Cada pergunta deve ter 4 opções e indicar a opção correta (índice 0-3). 
