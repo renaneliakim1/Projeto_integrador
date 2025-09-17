@@ -80,6 +80,7 @@ const Register = () => {
 
   const handleCadastro = () => {
     // Simulação de cadastro
+    localStorage.setItem('userName', name);
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userEducationalLevel', escolaridade);
     localStorage.setItem('userPreferredSubject', disciplina);

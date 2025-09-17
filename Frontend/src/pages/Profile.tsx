@@ -6,34 +6,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   ArrowLeft, 
   Trophy, 
-  Target, 
-  Clock, 
-  TrendingUp, 
   Calendar,
-  Award,
   Star,
   BookOpen,
   Calculator,
   Atom,
   Globe,
-  Palette
+  Palette,
+  Zap,
+  Target
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useAchievements } from '@/hooks/useAchievements';
 
-const userStats = {
-  name: "João Silva",
-  email: "joao.silva@email.com",
-  avatar: "",
-  joinDate: "Janeiro 2024",
-  totalGames: 127,
-  totalScore: 45680,
-  avgAccuracy: 78,
-  streak: 12,
-  level: 8,
-  xp: 2340,
-  nextLevelXp: 3000
-};
-
+// The hardcoded subjectStats and recentGames can stay for now as placeholders
 const subjectStats = [
   {
     id: "matematica",
@@ -92,15 +79,6 @@ const subjectStats = [
   }
 ];
 
-const achievements = [
-  { id: 1, name: "Primeiro Jogo", description: "Complete seu primeiro quiz", earned: true },
-  { id: 2, name: "Matemático", description: "1000 pontos em Matemática", earned: true },
-  { id: 3, name: "Sequência de Fogo", description: "Acerte 10 seguidas", earned: true },
-  { id: 4, name: "Velocista", description: "Responda em menos de 10s", earned: false },
-  { id: 5, name: "Especialista", description: "Nível 5 em qualquer matéria", earned: false },
-  { id: 6, name: "Poliglota", description: "Jogue todas as disciplinas", earned: false }
-];
-
 const recentGames = [
   { subject: "Matemática", score: 1250, date: "Hoje", accuracy: 80 },
   { subject: "Português", score: 980, date: "Ontem", accuracy: 75 },
@@ -108,8 +86,54 @@ const recentGames = [
   { subject: "Geografia", score: 890, date: "3 dias", accuracy: 70 },
 ];
 
+const iconMap: { [key: string]: React.ReactNode } = {
+  BookOpen: <BookOpen className="h-10 w-10" />,
+  Star: <Star className="h-10 w-10" />,
+  Zap: <Zap className="h-10 w-10" />,
+  Target: <Target className="h-10 w-10" />,
+};
+
 const Profile = () => {
-  const xpPercentage = (userStats.xp / userStats.nextLevelXp) * 100;
+  const [userStats, setUserStats] = useState({
+    name: "",
+    email: "",
+    avatar: "",
+    joinDate: "...",
+    totalGames: 0,
+    totalScore: 0,
+    avgAccuracy: 0, // Placeholder
+    streak: 0, // Placeholder
+    level: 1,
+    xp: 0,
+    nextLevelXp: 100,
+  });
+
+  const { allAchievements, unlockedAchievements } = useAchievements();
+
+  useEffect(() => {
+    const name = localStorage.getItem('userName') || 'Usuário';
+    const email = localStorage.getItem('userEmail') || '';
+    const level = parseInt(localStorage.getItem('userLevel') || '1', 10);
+    const xp = parseInt(localStorage.getItem('userXP') || '0', 10);
+    const quizzesCompleted = parseInt(localStorage.getItem('quizzesCompleted') || '0', 10);
+    
+    const nextLevelXp = level * 100;
+
+    setUserStats(prevStats => ({
+      ...prevStats,
+      name,
+      email,
+      level,
+      xp,
+      nextLevelXp,
+      totalGames: quizzesCompleted,
+      totalScore: xp, // Using XP as total score for now
+    }));
+  }, []);
+
+  const xpForCurrentLevel = userStats.xp - ((userStats.level - 1) * 100);
+  const xpToNextLevel = userStats.nextLevelXp - ((userStats.level - 1) * 100);
+  const xpPercentage = xpToNextLevel > 0 ? (xpForCurrentLevel / xpToNextLevel) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,25 +271,31 @@ const Profile = () => {
             <div>
               <h2 className="text-2xl font-bold mb-6">Conquistas</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                {achievements.map((achievement) => (
-                  <GameCard 
-                    key={achievement.id} 
-                    className={`p-4 ${achievement.earned ? 'border-success' : 'opacity-60'}`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Award className={`h-8 w-8 ${achievement.earned ? 'text-success' : 'text-muted-foreground'}`} />
-                      <div>
-                        <h3 className="font-bold">{achievement.name}</h3>
-                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                {allAchievements.map((achievement) => {
+                  const isEarned = unlockedAchievements.includes(achievement.id);
+                  const iconNode = iconMap[achievement.icon];
+                  return (
+                    <GameCard 
+                      key={achievement.id} 
+                      className={`p-4 ${isEarned ? 'border-green-500' : 'opacity-50'}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`h-10 w-10 ${isEarned ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {iconNode}
+                        </div>
+                        <div>
+                          <h3 className="font-bold">{achievement.name}</h3>
+                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                        </div>
+                        {isEarned && (
+                          <Badge variant="secondary" className="ml-auto bg-green-500/20 text-green-500">
+                            Conquistado
+                          </Badge>
+                        )}
                       </div>
-                      {achievement.earned && (
-                        <Badge variant="secondary" className="ml-auto">
-                          Conquistado
-                        </Badge>
-                      )}
-                    </div>
-                  </GameCard>
-                ))}
+                    </GameCard>
+                  );
+                })}
               </div>
             </div>
 
