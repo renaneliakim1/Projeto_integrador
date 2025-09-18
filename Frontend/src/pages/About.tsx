@@ -53,7 +53,6 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       <main className="pt-20">
         {/* Hero Section */}
@@ -68,7 +67,7 @@ const About = () => {
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Sobre o{" "}
               <span className="bg-gradient-primary bg-clip-text text-transparent">
-                EdGame
+                Skillio
               </span>
             </h1>
             
@@ -227,7 +226,6 @@ const About = () => {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 };

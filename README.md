@@ -22,6 +22,10 @@ Este projeto é composto por três partes principais: **Backend**, **Frontend** 
    ```cmd
    bun install
    ```
+3. Instale as dependências usando npm (recomendado):
+   ```cmd
+   npm install @google/generative-ai
+   ```
 
 ## Como executar o projeto
 

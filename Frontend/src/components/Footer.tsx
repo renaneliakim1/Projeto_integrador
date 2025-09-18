@@ -8,15 +8,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div className="col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <GameCard variant="game" size="sm" className="p-2">
-                <BookOpen className="h-6 w-6" />
-              </GameCard>
-              <div>
-                <h3 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  EdGame
-                </h3>
-                <p className="text-sm text-muted-foreground">Aprenda jogando!</p>
-              </div>
+              <img
+              src="/public/logoSkillio2.svg"
+              alt="Skillio"
+              className="h-12 w-18 rounded-md object-cover"
+            />
+              
             </div>
             <p className="text-muted-foreground mb-4">
               A plataforma de jogos educativos que transforma o aprendizado 
@@ -46,11 +43,11 @@ const Footer = () => {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-          <p className="flex items-center justify-center gap-2">
+          {/* <p className="flex items-center justify-center gap-2">
             Feito com <Heart className="h-4 w-4 text-red-500" /> pela equipe EdGame
-          </p>
+          </p> */}
           <p className="text-sm mt-2">
-            © 2024 EdGame. Todos os direitos reservados.
+            © 2025 Skillio. Todos os direitos reservados.
           </p>
         </div>
       </div>

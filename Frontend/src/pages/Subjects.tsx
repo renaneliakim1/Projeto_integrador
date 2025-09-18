@@ -9,7 +9,6 @@ import { subjects } from "@/data/subjects";
 const Subjects = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       <main className="pt-20">
         <div className="container mx-auto px-4 py-8">
@@ -73,7 +72,6 @@ const Subjects = () => {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 };

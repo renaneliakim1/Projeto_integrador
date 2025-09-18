@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Trophy, Medal, Award, Crown, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
 
-const globalRanking = [
+const initialGlobalRanking = [
   { id: 1, name: "Ana Costa", score: 15450, games: 89, accuracy: 92, avatar: "", position: 1 },
   { id: 2, name: "Carlos Silva", score: 14200, games: 75, accuracy: 89, avatar: "", position: 2 },
   { id: 3, name: "Maria Santos", score: 13800, games: 82, accuracy: 87, avatar: "", position: 3 },
@@ -63,8 +64,8 @@ const getPositionColor = (position: number) => {
   }
 };
 
-const RankingCard = ({ player, showStats = true }: { player: any, showStats?: boolean }) => (
-  <GameCard className={`p-4 ${player.position <= 3 ? getPositionColor(player.position) : ''} ${player.position <= 3 ? 'text-primary-foreground' : ''}`}>
+const RankingCard = ({ player, showStats = true, isCurrentUser = false }: { player: any, showStats?: boolean, isCurrentUser?: boolean }) => (
+  <GameCard className={`p-4 ${isCurrentUser ? 'border-2 border-primary shadow-lg' : ''} ${player.position <= 3 ? getPositionColor(player.position) : ''} ${player.position <= 3 ? 'text-primary-foreground' : ''}`}>
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div className="flex items-center justify-center w-12 h-12">
@@ -101,6 +102,44 @@ const RankingCard = ({ player, showStats = true }: { player: any, showStats?: bo
 );
 
 const Ranking = () => {
+  const [dynamicGlobalRanking, setDynamicGlobalRanking] = useState(initialGlobalRanking);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const userName = localStorage.getItem('userName');
+    const userXP = parseInt(localStorage.getItem('userXP') || '0', 10);
+
+    if (userName) {
+      setCurrentUserName(userName);
+      const userForRanking = {
+        id: 999, // Static ID for current user to avoid key conflicts
+        name: userName,
+        score: userXP,
+        games: 1, // Placeholder, this could be stored in localStorage too
+        accuracy: 80, // Placeholder
+        avatar: '',
+        position: 0, // Will be calculated
+      };
+
+      let rankingWithUser = [...initialGlobalRanking];
+      const userIndex = rankingWithUser.findIndex(p => p.name === userName);
+
+      if (userIndex !== -1) {
+        rankingWithUser[userIndex] = { ...rankingWithUser[userIndex], score: userXP };
+      } else {
+        rankingWithUser.push(userForRanking);
+      }
+
+      rankingWithUser.sort((a, b) => b.score - a.score);
+      const finalRanking = rankingWithUser.map((player, index) => ({
+        ...player,
+        position: index + 1,
+      }));
+
+      setDynamicGlobalRanking(finalRanking);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -151,7 +190,7 @@ const Ranking = () => {
               
               {/* Pódium */}
               <div className="grid md:grid-cols-3 gap-4 mb-8">
-                {globalRanking.slice(0, 3).map((player) => (
+                {dynamicGlobalRanking.slice(0, 3).map((player) => (
                   <GameCard
                     key={player.id}
                     variant={player.position === 1 ? "warning" : player.position === 2 ? "game" : "subject"}
@@ -179,8 +218,8 @@ const Ranking = () => {
               
               {/* Restante do ranking */}
               <div className="space-y-3">
-                {globalRanking.slice(3).map((player) => (
-                  <RankingCard key={player.id} player={player} />
+                {dynamicGlobalRanking.slice(3).map((player) => (
+                  <RankingCard key={player.id} player={player} isCurrentUser={currentUserName === player.name} />
                 ))}
               </div>
             </TabsContent>

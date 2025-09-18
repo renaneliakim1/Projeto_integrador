@@ -16,7 +16,6 @@ const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email || !password) {
       toast({
         title: "Campos obrigatórios",
@@ -25,14 +24,15 @@ const Login = () => {
       });
       return;
     }
-
     // Simulação de login
+    localStorage.setItem('userEmail', email);
+    window.dispatchEvent(new Event('user-auth-changed'));
     toast({
       title: "Login realizado!",
       description: "Bem-vindo de volta ao EdGame!",
     });
-    
-    navigate("/");
+    // Redireciona para o dashboard após login
+    navigate("/dashboard");
   };
 
   return (

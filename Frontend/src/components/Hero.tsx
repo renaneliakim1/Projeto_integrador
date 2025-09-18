@@ -11,11 +11,7 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Aprenda{" "}
-              <span className="bg-gradient-primary bg-clip-text text-transparent">
-                Brincando
-              </span>{" "}
-              com o EdGame
+              Aprenda Brincando com o <span className="bg-gradient-primary bg-clip-text text-transparent">Skillio</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Transforme seus estudos em uma aventura emocionante! Jogue, aprenda e 
