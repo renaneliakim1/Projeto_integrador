@@ -29,7 +29,7 @@ const Login = () => {
     window.dispatchEvent(new Event('user-auth-changed'));
     toast({
       title: "Login realizado!",
-      description: "Bem-vindo de volta ao EdGame!",
+      description: "Bem-vindo de volta ao Skillio!",
     });
     // Redireciona para o dashboard após login
     navigate("/dashboard");

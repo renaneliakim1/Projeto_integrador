@@ -28,13 +28,13 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [escolaridade, setEscolaridade] = useState("");
-  const [disciplina, setDisciplina] = useState("");
+  const [foco, setFoco] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Sugestões de disciplinas
-  const sugestoes = ["Português", "Matemática", "Programação", "História", "Geografia", "Biologia", "Física", "Química"];
+  // Opções de Foco
+  const opcoesFoco = ["ENEM", "Lógica", "Direito", "Português", "Matemática", "Programação", "História"];
 
   // Validação e navegação
   const handleAvancar = () => {
@@ -86,7 +86,7 @@ const Register = () => {
     localStorage.setItem('userName', name);
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userEducationalLevel', escolaridade);
-    localStorage.setItem('userPreferredSubject', disciplina);
+    localStorage.setItem('userFocus', foco);
     window.dispatchEvent(new Event('user-auth-changed'));
     toast({
       title: "Conta criada com sucesso!",
@@ -189,10 +189,10 @@ const Register = () => {
           {step === 3 && (
             <form className="space-y-6 pt-10" onSubmit={e => {e.preventDefault(); handleAvancar();}}>
               <div className="space-y-2">
-                <Label htmlFor="disciplina" className="text-foreground">Disciplina/Área preferida</Label>
-                <Input id="disciplina" type="text" value={disciplina} onChange={e => setDisciplina(e.target.value)} placeholder="Digite sua disciplina preferida" className="bg-background/50 border-border/50 focus:border-primary" list="sugestoes" />
-                <datalist id="sugestoes">
-                  {sugestoes.map((s, i) => <option key={i} value={s} />)}
+                <Label htmlFor="foco" className="text-foreground">Qual seu foco?</Label>
+                <Input id="foco" type="text" value={foco} onChange={e => setFoco(e.target.value)} placeholder="Digite seu foco principal (ex: ENEM, Lógica...)" className="bg-background/50 border-border/50 focus:border-primary" list="opcoesFoco" />
+                <datalist id="opcoesFoco">
+                  {opcoesFoco.map((s, i) => <option key={i} value={s} />)}
                 </datalist>
               </div>
               <Button type="submit" className="w-full bg-gradient-growth">Avançar</Button>

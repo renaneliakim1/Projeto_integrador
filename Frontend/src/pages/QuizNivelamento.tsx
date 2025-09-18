@@ -23,19 +23,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-async function gerarPerguntasGemini(escolaridade: string): Promise<PerguntaQuiz[]> {
+async function gerarPerguntasGemini(escolaridade: string, foco: string): Promise<PerguntaQuiz[]> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const prompt = `Gere um quiz de nivelamento com exatamente 25 perguntas de múltipla escolha para um estudante do nível "${escolaridade}".
+    O foco principal do estudante é "${foco}".
     As perguntas devem seguir estritamente a seguinte distribuição de áreas:
-    - Lógica: 4 questões
-    - Matemática: 3 questões
-    - Português: 3 questões
-    - Inglês: 3 questões
-    - Geografia: 3 questões
-    - História: 3 questões
-    - Informática: 3 questões
-    - Biologia: 3 questões
+    - ${foco}: 12 questões
+    - Conhecimentos Gerais (Lógica, Matemática, Português, Inglês, Geografia, História, Informática, Biologia, etc.): 13 questões distribuídas entre as áreas, excluindo a área de foco principal.
 
     Para cada pergunta, retorne no formato JSON:
     {
@@ -70,6 +65,7 @@ async function gerarPerguntasGemini(escolaridade: string): Promise<PerguntaQuiz[
 async function gerarPlanoDeEstudo(
   analise: Record<string, { acertos: number; erros: number; pulos: number }>,
   escolaridade: string,
+  foco: string,
   maxStreak: number,
   maxErrorStreak: number
 ): Promise<string> {
@@ -81,7 +77,7 @@ async function gerarPlanoDeEstudo(
     ).join('\n');
 
     const prompt = `
-      Você é um tutor virtual amigável e criativo chamado Skillio. Um aluno do ${escolaridade} acabou de fazer um quiz de nivelamento.
+      Você é um tutor virtual amigável e criativo chamado Skillio. Um aluno do ${escolaridade} acabou de fazer um quiz de nivelamento e informou que seu foco de estudo principal é "${foco}".
       
       # Análise de Desempenho
       ${desempenho}
@@ -91,11 +87,12 @@ async function gerarPlanoDeEstudo(
 
       Com base nisso, gere um plano de estudo personalizado em formato Markdown que seja visualmente interessante, amigável e motivador. Siga estritamente esta estrutura:
 
-      1.  **Título e Saudação**: Comece com um título chamativo (ex: "Sua Jornada do Conhecimento Começa Agora! 🚀") e uma saudação calorosa. Elogie o esforço do aluno e, se houver alguma matéria com 100% de acertos, destaque-a como um superpoder!
+      1.  **Título e Saudação**: Comece com um título chamativo (ex: "Sua Jornada do Conhecimento Começa Agora! 🚀") e uma saudação calorosa. Elogie o esforço do aluno.
 
       2.  **Seu Raio-X de Conhecimento**: Crie uma seção que resume o desempenho.
           -   Use um subtítulo como "🔍 Seu Raio-X de Conhecimento".
-          -   Identifique as **2 áreas prioritárias** (com mais erros e pulos). Chame-as de "Pontos de Foco".
+          -   **Priorize a área de foco principal do aluno**: "${foco}". Analise o desempenho nessa área primeiro.
+          -   Identifique as **2 áreas prioritárias** (com mais erros e pulos, dando preferência para a área de foco se ela estiver entre as com pior desempenho). Chame-as de "Pontos de Foco".
           -   Identifique a **melhor matéria** do aluno. Chame-a de "Seu Ponto Forte".
 
       3.  **Plano de Ação**: Crie uma seção com um plano de ação claro.
@@ -108,8 +105,8 @@ async function gerarPlanoDeEstudo(
 
       4.  **Próximo Desafio**: Sugira um passo prático.
           -   Use um subtítulo como "🎯 Seu Próximo Desafio".
-          -   Sugira começar pela matéria prioritária número 1 com um tom encorajador.
-          -   **Exemplo**: "Que tal começar aquecendo os motores com um jogo rápido de História para solidificar o que aprendeu?"
+          -   Sugira começar pela matéria prioritária número 1 com um tom encorajador. Se a área de foco for uma das prioritárias, sugira começar por ela.
+          -   **Exemplo**: "Que tal começar aquecendo os motores com um jogo rápido de ${foco} para solidificar o que aprendeu?"
 
       5.  **Mensagem Motivacional**: Finalize com uma mensagem curta e inspiradora.
           -   Use um subtítulo como "✨ Lembre-se Sempre".
@@ -160,29 +157,30 @@ const QuizNivelamento = () => {
   useEffect(() => {
     (async () => {
       const escolaridadePrompt = getEscolaridade();
+      const foco = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
       setCarregando(true);
       setErro(null);
-      const perguntas = await gerarPerguntasGemini(escolaridadePrompt);
+      const perguntas = await gerarPerguntasGemini(escolaridadePrompt, foco);
       if (perguntas && perguntas.length === 25) {
         setPerguntasNivelamento(perguntas);
       } else {
         setErro("Falha ao gerar perguntas com IA. Usando um quiz de exemplo.");
         setPerguntasNivelamento([
-            {pergunta: 'Qual animal é conhecido como o \"rei da selva\"?', alternativas: ['Tigre', 'Leão', 'Elefante', 'Urso'], resposta: 1, area: 'Biologia'},
+            {pergunta: 'Qual animal é conhecido como o "rei da selva"?', alternativas: ['Tigre', 'Leão', 'Elefante', 'Urso'], resposta: 1, area: 'Biologia'},
             {pergunta: 'Qual a fórmula da água?', alternativas: ['CO2', 'H2O', 'O2', 'N2'], resposta: 1, area: 'Biologia'},
             {pergunta: 'Qual processo as plantas usam para converter luz em energia?', alternativas: ['Respiração', 'Fotossíntese', 'Transpiração', 'Digestão'], resposta: 1, area: 'Biologia'},
             {pergunta: 'Qual a capital da França?', alternativas: ['Londres', 'Berlim', 'Madri', 'Paris'], resposta: 3, area: 'Geografia'},
             {pergunta: 'Qual o maior continente do mundo?', alternativas: ['África', 'Europa', 'Ásia', 'América'], resposta: 2, area: 'Geografia'},
             {pergunta: 'Qual o rio mais longo do mundo?', alternativas: ['Nilo', 'Amazonas', 'Yangtzé', 'Mississipi'], resposta: 1, area: 'Geografia'},
-            {pergunta: 'Quem escreveu \"Dom Quixote\"?', alternativas: ['Shakespeare', 'Cervantes', 'Dante', 'Homero'], resposta: 1, area: 'História'},
+            {pergunta: 'Quem escreveu "Dom Quixote"?', alternativas: ['Shakespeare', 'Cervantes', 'Dante', 'Homero'], resposta: 1, area: 'História'},
             {pergunta: 'Em que ano começou a Segunda Guerra Mundial?', alternativas: ['1914', '1939', '1945', '1929'], resposta: 1, area: 'História'},
             {pergunta: 'Qual civilização construiu as pirâmides de Gizé?', alternativas: ['Romana', 'Grega', 'Egípcia', 'Maia'], resposta: 2, area: 'História'},
-            {pergunta: 'O que significa a sigla \"CPU\" em um computador?', alternativas: ['Unidade Central de Processamento', 'Placa de Vídeo', 'Memória RAM', 'Fonte de Energia'], resposta: 0, area: 'Informática'},
+            {pergunta: 'O que significa a sigla "CPU" em um computador?', alternativas: ['Unidade Central de Processamento', 'Placa de Vídeo', 'Memória RAM', 'Fonte de Energia'], resposta: 0, area: 'Informática'},
             {pergunta: 'Qual empresa desenvolveu o sistema operacional Windows?', alternativas: ['Apple', 'Google', 'Microsoft', 'Linux'], resposta: 2, area: 'Informática'},
-            {pergunta: 'O que é um \"phishing\"?', alternativas: ['Um tipo de vírus', 'Um ataque para roubar informações', 'Uma peça de hardware', 'Um software de edição'], resposta: 1, area: 'Informática'},
-            {pergunta: 'Qual a tradução de \"book\" para o português?', alternativas: ['Livro', 'Caneta', 'Mesa', 'Cadeira'], resposta: 0, area: 'Inglês'},
-            {pergunta: 'Como se diz \"obrigado\" em inglês?', alternativas: ['Hello', 'Goodbye', 'Thank you', 'Sorry'], resposta: 2, area: 'Inglês'},
-            {pergunta: 'O que significa \"cat\" em inglês?', alternativas: ['Cachorro', 'Gato', 'Pássaro', 'Peixe'], resposta: 1, area: 'Inglês'},
+            {pergunta: 'O que é um "phishing"?', alternativas: ['Um tipo de vírus', 'Um ataque para roubar informações', 'Uma peça de hardware', 'Um software de edição'], resposta: 1, area: 'Informática'},
+            {pergunta: 'Qual a tradução de "book" para o português?', alternativas: ['Livro', 'Caneta', 'Mesa', 'Cadeira'], resposta: 0, area: 'Inglês'},
+            {pergunta: 'Como se diz "obrigado" em inglês?', alternativas: ['Hello', 'Goodbye', 'Thank you', 'Sorry'], resposta: 2, area: 'Inglês'},
+            {pergunta: 'O que significa "cat" em inglês?', alternativas: ['Cachorro', 'Gato', 'Pássaro', 'Peixe'], resposta: 1, area: 'Inglês'},
             {pergunta: 'Se um trem viaja a 100 km/h, que distância ele percorre em 2 horas?', alternativas: ['100 km', '150 km', '200 km', '250 km'], resposta: 2, area: 'Lógica'},
             {pergunta: 'Qual o próximo número na sequência: 2, 4, 6, 8, ...?', alternativas: ['9', '10', '11', '12'], resposta: 1, area: 'Lógica'},
             {pergunta: 'Se todo A é B e todo B é C, então:', alternativas: ['Todo C é A', 'Nenhum A é C', 'Todo A é C', 'Algum A não é C'], resposta: 2, area: 'Lógica'},
@@ -190,9 +188,9 @@ const QuizNivelamento = () => {
             {pergunta: 'Quanto é 7 multiplicado por 8?', alternativas: ['49', '54', '56', '63'], resposta: 2, area: 'Matemática'},
             {pergunta: 'Qual o resultado de 10 - (2 + 3)?', alternativas: ['5', '6', '7', '8'], resposta: 0, area: 'Matemática'},
             {pergunta: 'Se um círculo tem um raio de 5 cm, qual o seu diâmetro?', alternativas: ['5 cm', '10 cm', '15 cm', '25 cm'], resposta: 1, area: 'Matemática'},
-            {pergunta: 'Qual o sinônimo de \"rápido\"?', alternativas: ['Lento', 'Veloz', 'Grande', 'Pequeno'], resposta: 1, area: 'Português'},
-            {pergunta: 'Qual o coletivo de \"cães\"?', alternativas: ['Alcateia', 'Manada', 'Matilha', 'Cardume'], resposta: 2, area: 'Português'},
-            {pergunta: 'Qual a classe gramatical da palavra \"bonito\"?', alternativas: ['Substantivo', 'Verbo', 'Adjetivo', 'Advérbio'], resposta: 2, area: 'Português'}
+            {pergunta: 'Qual o sinônimo de "rápido"?', alternativas: ['Lento', 'Veloz', 'Grande', 'Pequeno'], resposta: 1, area: 'Português'},
+            {pergunta: 'Qual o coletivo de "cães"?', alternativas: ['Alcateia', 'Manada', 'Matilha', 'Cardume'], resposta: 2, area: 'Português'},
+            {pergunta: 'Qual a classe gramatical da palavra "bonito"?', alternativas: ['Substantivo', 'Verbo', 'Adjetivo', 'Advérbio'], resposta: 2, area: 'Português'}
         ]);
       }
       setCarregando(false);
@@ -246,7 +244,8 @@ const QuizNivelamento = () => {
       (async () => {
         setGerandoPlano(true);
         const escolaridade = getEscolaridade();
-        const plano = await gerarPlanoDeEstudo(analise, escolaridade, maxStreak, maxErrorStreak);
+        const foco = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
+        const plano = await gerarPlanoDeEstudo(analise, escolaridade, foco, maxStreak, maxErrorStreak);
         setPlanoDeEstudoGerado(plano);
         setGerandoPlano(false);
       })();
