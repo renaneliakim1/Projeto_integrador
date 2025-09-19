@@ -17,13 +17,13 @@ const Footer = () => {
               
             </div>
             <p className="text-muted-foreground mb-4">
-              A plataforma de jogos educativos que transforma o aprendizado 
+              Skillio é uma plataforma de jogos educativos que transforma o aprendizado 
               em uma experiência divertida e eficaz para estudantes de todas as idades.
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Disciplinas</h4>
+            <h4 className="font-semibold mb-4">Explorar</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="#" className="hover:text-primary transition-colors">Matemática</Link></li>
               <li><Link to="#" className="hover:text-primary transition-colors">Português</Link></li>
@@ -36,7 +36,7 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Recursos</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/ranking" className="hover:text-primary transition-colors">Ranking</Link></li>
-              <li><Link to="/profile" className="hover:text-primary transition-colors">Perfil</Link></li>
+{/*               <li><Link to="/profile" className="hover:text-primary transition-colors">Perfil</Link></li> */}
               <li><Link to="/dashboard" className="hover:text-primary transition-colors">Estatísticas</Link></li>
               <li><Link to="/suporte" className="hover:text-primary transition-colors">Suporte</Link></li>
             </ul>
