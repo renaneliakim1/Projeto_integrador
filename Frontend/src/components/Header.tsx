@@ -66,7 +66,7 @@ const Header = () => {
               to="/subjects"
               className="text-foreground hover:text-primary transition-colors"
             >
-              Disciplinas
+              Explorar
             </Link>
             <Link
               to="/ranking"

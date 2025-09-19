@@ -19,6 +19,7 @@ import Header from "@/components/Header";
 import Dashboard from "./pages/Dashboard";
 import QuizNivelamento from "./pages/QuizNivelamento";
 import Footer from "@/components/Footer";
+import Suporte from "./pages/Suporte";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/quiz-nivelamento" element={<QuizNivelamento />} />
+              <Route path="/suporte" element={<Suporte />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

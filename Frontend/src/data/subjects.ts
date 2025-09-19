@@ -33,14 +33,14 @@ export const subjects = [
     variant: "intellect" as const,
     description: "Vocabulário e cultura hispânica"
   },
-  {
+/*   {
     id: "frances",
     name: "Francês",
     icon: Languages,
     questions: 140,
     variant: "wisdom" as const,
     description: "Língua francesa e cultura"
-  },
+  }, 
   {
     id: "alemao",
     name: "Alemão",
@@ -88,7 +88,7 @@ export const subjects = [
     questions: 110,
     variant: "wisdom" as const,
     description: "Escrita árabe e cultura"
-  },
+  },*/
   {
     id: "fisica",
     name: "Física", 
@@ -137,7 +137,7 @@ export const subjects = [
     variant: "wisdom" as const,
     description: "Pensamento crítico e reflexão"
   },
-  {
+ /*  {
     id: "sociologia",
     name: "Sociologia",
     icon: Users,
@@ -152,7 +152,7 @@ export const subjects = [
     questions: 145,
     variant: "wisdom" as const,
     description: "Mente humana e comportamento"
-  },
+  } ,
   {
     id: "economia",
     name: "Economia",
@@ -304,7 +304,7 @@ export const subjects = [
     questions: 95,
     variant: "growth" as const,
     description: "Destinos e hospitalidade"
-  },
+  },*/
   {
     id: "informatica",
     name: "Informática",
@@ -312,5 +312,13 @@ export const subjects = [
     questions: 200,
     variant: "knowledge" as const,
     description: "Programação, algoritmos e tecnologia"
+  },
+  {
+    id: "logica",
+    name: "Lógica",
+    icon: TrendingUp,
+    questions: 200,
+    variant: "knowledge" as const,
+    description: "Raciocínio, análise e pensamento"
   }
 ];

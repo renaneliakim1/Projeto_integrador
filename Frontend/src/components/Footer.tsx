@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { GameCard } from "@/components/ui/game-card";
 import { BookOpen, Heart } from "lucide-react";
 
@@ -24,20 +25,20 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Disciplinas</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Matemática</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Português</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Ciências</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">História</a></li>
+              <li><Link to="#" className="hover:text-primary transition-colors">Matemática</Link></li>
+              <li><Link to="#" className="hover:text-primary transition-colors">Português</Link></li>
+              <li><Link to="#" className="hover:text-primary transition-colors">Ciências</Link></li>
+              <li><Link to="#" className="hover:text-primary transition-colors">História</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Recursos</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Ranking</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Perfil</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Estatísticas</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Suporte</a></li>
+              <li><Link to="/ranking" className="hover:text-primary transition-colors">Ranking</Link></li>
+              <li><Link to="/profile" className="hover:text-primary transition-colors">Perfil</Link></li>
+              <li><Link to="/dashboard" className="hover:text-primary transition-colors">Estatísticas</Link></li>
+              <li><Link to="/suporte" className="hover:text-primary transition-colors">Suporte</Link></li>
             </ul>
           </div>
         </div>

@@ -173,6 +173,14 @@ const Register = () => {
               <Button type="submit" className="w-full bg-gradient-growth" disabled={!(aceitouTermos && name && email && password && confirmPassword)}>
                 Avançar
               </Button>
+              <div className="text-center mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Já possui conta?{" "}
+                  <Link to="/login" className="text-primary hover:underline">
+                    Login
+                  </Link>
+                </p>
+              </div>
             </form>
           )}
           {step === 2 && (
