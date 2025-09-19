@@ -3,6 +3,7 @@ import { GameCard } from "@/components/ui/game-card";
 import { Play, Trophy, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import mascot from "@/assets/mascot.png";
+import TypedTextWithHighlight from './TypedTextWithHighlight';
 
 const Hero = () => {
   return (
@@ -11,7 +12,12 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Aprenda Brincando com o <span className="bg-gradient-primary bg-clip-text text-transparent">Skillio</span>
+              <TypedTextWithHighlight
+                text="Aprenda Brincando com o Skillio"
+                highlightWord="Skillio"
+                highlightClassName="bg-gradient-primary bg-clip-text text-transparent"
+                speed={75}
+              />
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Transforme seus estudos em uma aventura emocionante! Jogue, aprenda e 
