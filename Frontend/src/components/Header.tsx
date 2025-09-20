@@ -42,6 +42,7 @@ const Header = () => {
           </div>
           <nav className="hidden md:flex items-center space-x-6">
             {location.pathname !== "/" && <Link to="/" className="text-foreground hover:text-primary transition-colors">Início</Link>}
+            {isLogged && location.pathname !== "/dashboard" && <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">Meu Desempenho</Link>}
             <Link to="/subjects" className="text-foreground hover:text-primary transition-colors">Explorar</Link>
             <Link to="/ranking" className="text-foreground hover:text-primary transition-colors">Ranking</Link>
             <Link to="/about" className="text-foreground hover:text-primary transition-colors">Sobre Nós</Link>

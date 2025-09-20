@@ -80,7 +80,7 @@ async function gerarPlanoDeEstudo(
   idade: number,
   maxStreak: number,
   maxErrorStreak: number
-): Promise<string> {
+): Promise<{ planMarkdown: string; priorityAreas: string[] } | null> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     
@@ -97,7 +97,7 @@ async function gerarPlanoDeEstudo(
       - **Sequência máxima de acertos**: ${maxStreak}
       - **Sequência máxima de erros/pulos**: ${maxErrorStreak}
 
-      Com base nisso, gere um plano de estudo personalizado em formato Markdown que seja visualmente interessante, amigável e motivador. Siga estritamente esta estrutura:
+      Com base nisso, gere um plano de estudo personalizado. Siga estritamente esta estrutura:
 
       1.  **Título e Saudação**: Comece com um título chamativo (ex: "Sua Jornada do Conhecimento Começa Agora! 🚀") e uma saudação calorosa. Elogie o esforço do aluno.
 
@@ -110,28 +110,34 @@ async function gerarPlanoDeEstudo(
       3.  **Plano de Ação**: Crie uma seção com um plano de ação claro.
           -   Use um subtítulo como "🔥 Plano de Ação Personalizado".
           -   Para cada uma das 2 áreas prioritárias, use um emoji e sugira **2 tópicos específicos** para revisar. Explique brevemente (uma linha) por que o tópico é importante.
-          -   **Exemplo**:
-              -   "**História 🏛️**"
-              -   "  - **Revolução Francesa**: Entender este evento é chave para compreender o mundo moderno."
-              -   "  - **Brasil Colônia**: Base para a formação do nosso país."
 
       4.  **Próximo Desafio**: Sugira um passo prático.
           -   Use um subtítulo como "🎯 Seu Próximo Desafio".
-          -   Sugira começar pela matéria prioritária número 1 com um tom encorajador. Se a área de foco for uma das prioritárias, sugira começar por ela.
-          -   **Exemplo**: "Que tal começar aquecendo os motores com um jogo rápido de ${foco} para solidificar o que aprendeu?"
+          -   Sugira começar pela matéria prioritária número 1 com um tom encorajador.
 
       5.  **Mensagem Motivacional**: Finalize com uma mensagem curta e inspiradora.
           -   Use um subtítulo como "✨ Lembre-se Sempre".
-          -   **Exemplo**: "Cada erro é um degrau para o sucesso. Continue curioso e não desista!"
 
-      Use emojis para tornar o texto mais visual e amigável. O tom deve ser sempre positivo e encorajador.
+      A resposta DEVE ser um objeto JSON com dois campos: 'planMarkdown' (contendo o plano de estudo em formato Markdown) e 'priorityAreas' (um array de strings com os nomes das 2 áreas prioritárias).
     `;
 
     const result = await model.generateContent(prompt);
-    return result.response.text();
+    const text = result.response.text();
+    
+    try {
+      const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/);
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("Erro ao fazer parse do JSON do plano de estudo:", e);
+      return null;
+    }
+
   } catch (e) {
     console.error("Erro ao gerar plano de estudo com a IA:", e);
-    return "### Ops! Algo deu errado...\n\nNão foi possível gerar seu plano de estudo personalizado no momento. Por favor, tente novamente mais tarde ou verifique sua conexão.";
+    return null;
   }
 }
 
@@ -154,7 +160,7 @@ const QuizNivelamento = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { checkAndUnlockAchievements } = useAchievements();
+  // const { checkAndUnlockAchievements } = useAchievements(); // Hook não utilizado
 
   const getEscolaridade = () => {
     const escolaridadeValue = localStorage.getItem('userEducationalLevel') || 'medio';
@@ -292,19 +298,33 @@ const QuizNivelamento = () => {
       }));
       setDadosGrafico(dadosParaGrafico);
 
-      completeQuiz();
+      // A função completeQuiz() não está definida neste escopo.
+      // Se você tiver um hook de gamificação, ele deve ser chamado aqui.
 
       (async () => {
         setGerandoPlano(true);
         const escolaridade = getEscolaridade();
         const foco = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
         const idade = getUserAge();
-        const plano = await gerarPlanoDeEstudo(analise, escolaridade, foco, idade, maxStreak, maxErrorStreak);
-        setPlanoDeEstudoGerado(plano);
+        const planoResponse = await gerarPlanoDeEstudo(analise, escolaridade, foco, idade, maxStreak, maxErrorStreak);
+
+        if (planoResponse) {
+          setPlanoDeEstudoGerado(planoResponse.planMarkdown);
+          localStorage.setItem('studyPlan', JSON.stringify(planoResponse.priorityAreas));
+          
+          if (planoResponse.priorityAreas && planoResponse.priorityAreas.length > 0) {
+            localStorage.setItem('userPreferredSubject', planoResponse.priorityAreas[0]);
+          } else {
+            localStorage.setItem('userPreferredSubject', foco);
+          }
+        } else {
+          setPlanoDeEstudoGerado("Não foi possível gerar seu plano de estudo. Tente novamente.");
+        }
+
         setGerandoPlano(false);
       })();
     }
-  }, [finalizado, planoEstudo, toast, checkAndUnlockAchievements, maxStreak, maxErrorStreak]);
+  }, [finalizado, planoEstudo, toast, maxStreak, maxErrorStreak]);
 
   const proximaPergunta = (resposta: number | null) => {
     const perguntaAtual = perguntasNivelamento[indice];

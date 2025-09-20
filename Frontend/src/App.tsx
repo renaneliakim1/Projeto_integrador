@@ -20,6 +20,8 @@ import Dashboard from "./pages/Dashboard";
 import QuizNivelamento from "./pages/QuizNivelamento";
 import Footer from "@/components/Footer";
 import Suporte from "./pages/Suporte";
+import Lesson from "./pages/Lesson";
+import EditProfile from "./pages/EditProfile";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +38,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/subjects" element={<Subjects />} />
               <Route path="/game/:subjectId" element={<Game />} />
+              <Route path="/lesson/:subjectId" element={<Lesson />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/ranking" element={<Ranking />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />

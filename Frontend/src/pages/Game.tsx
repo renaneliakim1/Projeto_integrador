@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Trophy, Pause, X, RotateCcw } from "lucide-react";
+import { ArrowLeft, Clock, Trophy, Pause, X, RotateCcw, BookOpen, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useGenerativeAI } from "@/hooks/useGenerativeAI"; // Import the new hook
+import { useGenerativeAI } from "@/hooks/useGenerativeAI";
 
 // Define the structure for a question
 interface Question {
@@ -61,6 +61,7 @@ const subjectNames: { [key: string]: string } = {
 
 const Game = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -69,21 +70,18 @@ const Game = () => {
   const [showResult, setShowResult] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [nextSubject, setNextSubject] = useState<string | null>(null);
 
-  // Retrieve educational level and preferred subject from localStorage
-  const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio'; // Default to 'medio' if not found
-  const preferredSubject = localStorage.getItem('userPreferredSubject') || ''; // Default to empty
+  const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio';
+  const preferredSubject = localStorage.getItem('userPreferredSubject') || '';
 
-  // Determine the subject to use for AI generation
   const currentSubject = subjectId || preferredSubject;
 
-  // Use the generative AI hook
   const { generatedQuestions, loading, error, refetch } = useGenerativeAI(
     currentSubject,
     educationalLevel
   );
 
-  // Use generatedQuestions directly
   const questions: Question[] = generatedQuestions;
 
   const resetGame = useCallback(() => {
@@ -94,17 +92,14 @@ const Game = () => {
     setShowResult(false);
     setGameOver(false);
     setIsPaused(false);
-    // Only refetch if there are no questions and not already loading/errored
     if (generatedQuestions.length === 0 && !loading && !error && currentSubject) {
       refetch();
     }
   }, [generatedQuestions, loading, error, refetch, currentSubject]);
 
   useEffect(() => {
-    // Reset game state when subjectId changes or new questions are generated
     resetGame();
   }, [subjectId, generatedQuestions, resetGame]);
-
 
   const handleAnswer = useCallback((answerIndex: number) => {
     setSelectedAnswer(answerIndex);
@@ -143,15 +138,33 @@ const Game = () => {
     }, 2000);
   }, [currentQuestion, questions, timeLeft, score, toast]);
 
-  // Timer
   useEffect(() => {
     if (timeLeft > 0 && !showResult && !gameOver && !isPaused && questions.length > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !showResult && questions.length > 0) {
-      handleAnswer(-1); // Tempo esgotado
+      handleAnswer(-1);
     }
   }, [timeLeft, showResult, gameOver, isPaused, questions, handleAnswer]);
+
+  useEffect(() => {
+    if (gameOver) {
+      const studyPlanJSON = localStorage.getItem('studyPlan');
+      if (studyPlanJSON) {
+        try {
+          const studyPlan = JSON.parse(studyPlanJSON);
+          const currentIndex = studyPlan.indexOf(subjectId);
+          if (currentIndex !== -1 && currentIndex < studyPlan.length - 1) {
+            const nextSub = studyPlan[currentIndex + 1];
+            setNextSubject(nextSub);
+            localStorage.setItem('userPreferredSubject', nextSub);
+          }
+        } catch (e) {
+          console.error("Failed to parse study plan:", e);
+        }
+      }
+    }
+  }, [gameOver, subjectId]);
 
   if (loading) {
     return (
@@ -205,17 +218,22 @@ const Game = () => {
               {percentage}% de aproveitamento
             </Badge>
           </div>
-          <div className="flex gap-4">
-            <Button variant="game" onClick={resetGame} className="flex-1">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Jogar Novamente
-            </Button>
-            <Link to="/subjects" className="flex-1">
-              <Button variant="outline" className="w-full">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Disciplinas
+          <div className="flex flex-col gap-4">
+            {nextSubject ? (
+              <Button variant="game" onClick={() => navigate(`/lesson/${nextSubject}`)} className="flex-1">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Próxima Aula: {nextSubject}
               </Button>
-            </Link>
+            ) : (
+              <Button variant="game" onClick={() => navigate('/dashboard')} className="flex-1">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Finalizar Trilha
+              </Button>
+            )}
+            <Button variant="outline" onClick={resetGame} className="w-full">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Jogar Novamente (Mesma Matéria)
+            </Button>
           </div>
         </GameCard>
       </div>
