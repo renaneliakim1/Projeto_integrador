@@ -1,9 +1,9 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { trilhaPrincipal } from '@/data/trilhaPrincipal';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Flame, BrainCircuit, Lock, Check, Heart, Gift } from 'lucide-react';
+import { Flame, BrainCircuit, Lock, Check, Heart, Gift, ArrowLeft } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
 import { useToast } from '@/hooks/use-toast';
 import { useTimeTracker } from '@/hooks/useTimeTracker';
@@ -40,7 +40,7 @@ const Trilha = () => {
   }, [nivelAtual]);
 
   const handleBlockClick = (nivel: number, blocoId: string) => {
-    navigate(`/game/${blocoId}?nivel=${nivel}`);
+    navigate(`/lesson/${blocoId}`);
   };
 
   const handleClaimReward = (nivel: number) => {
@@ -55,8 +55,14 @@ const Trilha = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 relative">
+      <Link to="/dashboard">
+          <Button variant="ghost" className="absolute top-8 left-8 z-20">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao Dashboard
+          </Button>
+      </Link>
+      <div className="text-center mb-12 pt-16">
         <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">Sua Trilha de Aprendizado</h1>
         <p className="text-muted-foreground mt-2">Avance pelos níveis e domine novas habilidades.</p>
       </div>

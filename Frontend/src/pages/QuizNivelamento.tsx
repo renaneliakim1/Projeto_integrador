@@ -441,7 +441,7 @@ const QuizNivelamento = () => {
 
           </CardContent>
           <div className="p-6 border-t text-center">
-             <Button size="lg" className="bg-gradient-growth" onClick={() => navigate("/trilha")}>Avançar</Button>
+             <Button size="lg" className="bg-gradient-growth" onClick={() => navigate("/dashboard")}>Avançar</Button>
           </div>
         </Card>
       </div>

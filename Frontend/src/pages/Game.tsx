@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Trophy, Pause, X, RotateCcw, BookOpen, CheckCircle, HeartCrack } from "lucide-react";
+import { ArrowLeft, Clock, Trophy, X, RotateCcw, CheckCircle, HeartCrack, SkipForward } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGenerativeAI } from "@/hooks/useGenerativeAI";
 import { trilhaPrincipal } from "@/data/trilhaPrincipal";
+import { subjects } from "@/data/subjects"; // Import subjects
 import { useGamification } from "@/hooks/useGamification";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
 
@@ -21,14 +22,34 @@ interface Question {
 
 const Game = () => {
   const { blocoId } = useParams<{ blocoId: string }>();
-  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addXp, completeBlock, isBlockCompleted, loseHeart, hearts } = useGamification();
   useTimeTracker(); // Inicia o rastreamento de tempo nesta página
 
-  const nivel = new URLSearchParams(location.search).get('nivel');
-  const blocoInfo = trilhaPrincipal.flatMap(n => n.blocos).find(b => b.id === blocoId);
+  const trilhaBloco = trilhaPrincipal.flatMap(n => n.blocos).find(b => b.id === blocoId);
+  const subjectInfo = subjects.find(s => s.id === blocoId);
+
+  let title: string | undefined;
+  let nivel: number | null = null;
+  let subject: string;
+  let isTrailGame = false;
+
+  if (trilhaBloco) { // It's a trail game
+    isTrailGame = true;
+    title = trilhaBloco.titulo;
+    const nivelInfo = trilhaPrincipal.find(n => n.blocos.some(b => b.id === blocoId));
+    nivel = nivelInfo ? nivelInfo.nivel : 1; // Default to 1 if not found
+    const userFocus = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
+    subject = trilhaBloco.tipo === 'foco' ? userFocus : 'Conhecimentos Gerais';
+  } else if (subjectInfo) { // It's a subject game
+    title = subjectInfo.name;
+    nivel = 1; // Default level for subject games
+    subject = subjectInfo.name;
+  } else {
+    title = undefined;
+    subject = 'Conhecimentos Gerais';
+  }
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -36,28 +57,24 @@ const Game = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
 
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio';
-  const userFocus = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
-
-  const subject = blocoInfo?.tipo === 'foco' ? userFocus : 'Conhecimentos Gerais';
 
   const { generatedQuestions, loading, error, refetch } = useGenerativeAI(
     subject,
     educationalLevel,
-    nivel ? parseInt(nivel, 10) : 1
+    nivel || 1
   );
 
   const questions: Question[] = generatedQuestions;
 
   useEffect(() => {
     // Impede o início do jogo se o usuário não tiver vidas e o bloco não estiver completo
-    if (hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
+    if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
         toast({ title: "Sem vidas!", description: "Você precisa de vidas para começar um novo bloco.", variant: "destructive" });
         navigate('/trilha');
     }
-  }, [hearts, blocoId, isBlockCompleted, navigate, toast]);
+  }, [isTrailGame, hearts, blocoId, isBlockCompleted, navigate, toast]);
 
   const handleAnswer = useCallback((answerIndex: number) => {
     setSelectedAnswer(answerIndex);
@@ -65,14 +82,17 @@ const Game = () => {
     
     const isCorrect = answerIndex === questions[currentQuestion]?.correct;
     if (isCorrect) {
+      setScore(prevScore => prevScore + 10);
       addXp(5);
-      toast({ title: "Correto! 🎉", description: `+5 XP` });
+      toast({ title: "Correto! 🎉", description: `+10 Pontos, +5 XP` });
     } else {
-      loseHeart();
+      if (isTrailGame) loseHeart(); // Only lose hearts in trail games
       if (answerIndex === -1) {
         toast({ title: "Tempo esgotado! ⏰", variant: "destructive" });
+      } else if (answerIndex === null) { // Pulo
+        toast({ title: "Pergunta pulada!", variant: "default" });
       } else {
-        toast({ title: "Incorreto 😔", description: "Você perdeu uma vida.", variant: "destructive" });
+        toast({ title: "Incorreto 😔", description: isTrailGame ? "Você perdeu uma vida." : "Resposta incorreta.", variant: "destructive" });
       }
     }
 
@@ -86,25 +106,25 @@ const Game = () => {
         setGameOver(true);
       }
     }, 2000);
-  }, [currentQuestion, questions, addXp, toast, loseHeart]);
+  }, [currentQuestion, questions, addXp, toast, loseHeart, isTrailGame]);
 
   useEffect(() => {
-    if (timeLeft > 0 && !showResult && !gameOver && !isPaused && questions.length > 0) {
+    if (timeLeft > 0 && !showResult && !gameOver && questions.length > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !showResult && questions.length > 0) {
       handleAnswer(-1);
     }
-  }, [timeLeft, showResult, gameOver, isPaused, questions, handleAnswer]);
+  }, [timeLeft, showResult, gameOver, questions, handleAnswer]);
 
   useEffect(() => {
-    if (gameOver && blocoId) {
+    if (gameOver && blocoId && isTrailGame) { // Only complete blocks for trail games
       if (!isBlockCompleted(blocoId)) {
         completeBlock(blocoId);
         toast({ title: "Bloco Concluído!", description: "+10 XP e conquista desbloqueada!" });
       }
     }
-  }, [gameOver, blocoId, completeBlock, isBlockCompleted, toast]);
+  }, [gameOver, blocoId, isTrailGame, completeBlock, isBlockCompleted, toast]);
 
   const resetGame = () => {
       refetch();
@@ -114,10 +134,9 @@ const Game = () => {
       setSelectedAnswer(null);
       setShowResult(false);
       setGameOver(false);
-      setIsPaused(false);
   };
 
-  if (hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
+  if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
             <GameCard className="p-8 text-center">
@@ -130,8 +149,8 @@ const Game = () => {
     );
   }
 
-  if (!blocoInfo || !nivel) {
-      return <div className="text-center p-8">Bloco não encontrado.</div>
+  if (!title) {
+      return <div className="text-center p-8">Bloco ou Matéria não encontrada.</div>
   }
 
   if (loading) {
@@ -175,11 +194,11 @@ const Game = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <GameCard variant="subject" className="p-8 text-center max-w-md">
           <Trophy className="h-16 w-16 mx-auto mb-6 text-warning" />
-          <h2 className="text-3xl font-bold mb-4">Bloco Finalizado!</h2>
+          <h2 className="text-3xl font-bold mb-4">{isTrailGame ? 'Bloco Finalizado!' : 'Quiz Finalizado!'}</h2>
           <div className="flex flex-col gap-4 mt-8">
-              <Button variant="game" onClick={() => navigate('/trilha')} className="flex-1">
+              <Button variant="game" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="flex-1">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Voltar para a Trilha
+                {isTrailGame ? 'Voltar para a Trilha' : 'Ver outras matérias'}
               </Button>
             <Button variant="outline" onClick={resetGame} className="w-full">
               <RotateCcw className="h-4 w-4 mr-2" />
@@ -198,15 +217,15 @@ const Game = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <Link to="/trilha">
+          <Link to={isTrailGame ? "/trilha" : "/subjects"}>
             <Button variant="ghost">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {blocoInfo.titulo}
+              {title}
             </Button>
           </Link>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => setIsPaused(!isPaused)}><Pause className="h-4 w-4" /></Button>
-            <Link to="/trilha"><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></Link>
+            <Button variant="ghost" onClick={() => handleAnswer(null)}><SkipForward className="h-4 w-4" /></Button>
+            <Link to={isTrailGame ? "/trilha" : "/subjects"}><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></Link>
           </div>
         </div>
 
@@ -226,7 +245,6 @@ const Game = () => {
             <Clock className={`h-8 w-8 mx-auto mb-2 ${timeLeft <= 5 ? 'animate-pulse' : ''}`} />
             <div className="text-3xl font-bold">{timeLeft}</div>
             <div className="text-sm text-muted-foreground">segundos</div>
-            {isPaused && <Badge variant="secondary" className="mt-2">Jogo Pausado</Badge>}
           </GameCard>
         </div>
 
@@ -245,8 +263,8 @@ const Game = () => {
                     key={index}
                     variant={variant === "default" ? "outline" : variant}
                     className="h-16 text-lg justify-start px-6"
-                    onClick={() => !showResult && !isPaused && handleAnswer(index)}
-                    disabled={showResult || isPaused}
+                    onClick={() => !showResult && handleAnswer(index)}
+                    disabled={showResult}
                   >
                     <span className="font-bold mr-4">{String.fromCharCode(65 + index)}</span>
                     {option}
