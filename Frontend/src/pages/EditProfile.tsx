@@ -8,8 +8,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, User, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedDatePicker } from "@/components/ui/AnimatedDatePicker";
+import { Separator } from "@/components/ui/separator";
 
 const EditProfile = () => {
+  // State for profile info
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [escolaridade, setEscolaridade] = useState("");
@@ -17,6 +19,15 @@ const EditProfile = () => {
   const [profissao, setProfissao] = useState("");
   const [foco, setFoco] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
+
+  // State for password change
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,6 +48,41 @@ const EditProfile = () => {
   }, []);
 
   const handleSave = () => {
+    // --- Lógica de Alteração de Senha ---
+    if (currentPassword || newPassword || confirmPassword) {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        toast({
+          title: "Erro ao alterar senha",
+          description: "Por favor, preencha todos os três campos de senha para alterá-la.",
+          variant: "destructive",
+        });
+        return; // Impede o salvamento do resto do perfil se a senha estiver incompleta
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Erro",
+          description: "A nova senha e a confirmação não são iguais.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast({
+          title: "Erro",
+          description: "A nova senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Lógica para alterar a senha (ex: chamada de API)
+      console.log("Alterando a senha...");
+      // Se a alteração de senha for bem-sucedida, pode continuar para salvar o perfil
+    }
+
+    // --- Lógica para Salvar Informações do Perfil ---
     localStorage.setItem('userName', name);
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userEducationalLevel', escolaridade);
@@ -55,7 +101,7 @@ const EditProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <EducacaoParticles />
       </div>
@@ -70,7 +116,7 @@ const EditProfile = () => {
             Editar Perfil
           </h1>
           <p className="text-muted-foreground mt-2">
-            Atualize suas informações
+            Atualize suas informações pessoais ou altere sua senha.
           </p>
         </div>
         <Card className="p-6 shadow-elevated bg-card/80 backdrop-blur-sm border-border/50 relative">
@@ -78,14 +124,15 @@ const EditProfile = () => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-4  left-4 z-50 bg-background/80 hover:bg-background/90"
+              className="absolute top-4 left-4 z-50 bg-background/80 hover:bg-background/90"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <form className="space-y-6 pt-10" onSubmit={e => {e.preventDefault(); handleSave();}}>
+            {/* --- Seção de Informações Pessoais --- */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-foreground">Nome </Label>
+              <Label htmlFor="name" className="text-foreground">Nome</Label>
               <Input id="name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" className="bg-background/50 border-border/50 focus:border-primary" />
             </div>
             <div className="space-y-2">
@@ -127,6 +174,62 @@ const EditProfile = () => {
               <Input id="foto" type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : null)} />
               {foto && <img src={foto} alt="Foto de perfil" className="mt-2 w-24 h-24 rounded-full object-cover mx-auto" />}
             </div>
+
+            <Separator className="my-8 bg-border/50" />
+
+            {/* --- Seção de Alteração de Senha --- */}
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-center">Alterar Senha </h3>
+                    <p className="text-sm text-muted-foreground text-center">Preencha os campos abaixo apenas se desejar alterar sua senha.</p>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="current-password">Senha Atual</Label>
+                <div className="relative">
+                    <Input 
+                    id="current-password" 
+                    type={showCurrentPassword ? "text" : "password"} 
+                    value={currentPassword} 
+                    onChange={e => setCurrentPassword(e.target.value)} 
+                    className="bg-background/50 border-border/50 focus:border-primary"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-0 h-full px-3" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                    {showCurrentPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                    </Button>
+                </div>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <div className="relative">
+                    <Input 
+                    id="new-password" 
+                    type={showNewPassword ? "text" : "password"} 
+                    value={newPassword} 
+                    onChange={e => setNewPassword(e.target.value)} 
+                    className="bg-background/50 border-border/50 focus:border-primary"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-0 h-full px-3" onClick={() => setShowNewPassword(!showNewPassword)}>
+                    {showNewPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                    </Button>
+                </div>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                <div className="relative">
+                    <Input 
+                    id="confirm-password" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    value={confirmPassword} 
+                    onChange={e => setConfirmPassword(e.target.value)} 
+                    className="bg-background/50 border-border/50 focus:border-primary"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-0 h-full px-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                    </Button>
+                </div>
+                </div>
+            </div>
+
             <Button type="submit" className="w-full bg-gradient-growth">Salvar Alterações</Button>
           </form>
         </Card>
