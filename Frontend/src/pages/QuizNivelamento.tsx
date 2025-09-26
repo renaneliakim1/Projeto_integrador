@@ -59,7 +59,7 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const prompt = `
       Você é um especialista em educação e criação de conteúdo didático.
       Sua tarefa é gerar um quiz de nivelamento com EXATAMENTE 25 perguntas de múltipla escolha para um estudante com as seguintes características:
@@ -152,7 +152,7 @@ async function gerarPlanoDeEstudo(
   maxErrorStreak: number
 ): Promise<StudyPlan | null> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     const desempenho = Object.entries(analise).map(([area, dados]) => 
       `- **${area}**: Acertou ${dados.acertos} de ${dados.acertos + dados.erros + dados.pulos} (pulou ${dados.pulos}).`

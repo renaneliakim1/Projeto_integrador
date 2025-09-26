@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY;
-const DEFAULT_MODEL = "gemini-1.5-flash-latest";
+const DEFAULT_MODEL = "gemini-pro";
 
 // Lista de categorias de ranking pré-definidas
 const PREDEFINED_CATEGORIES = ["Matemática", "Programação", "Português", "História", "Geografia", "Ciências"];

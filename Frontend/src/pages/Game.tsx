@@ -57,6 +57,7 @@ const Game = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [mistakes, setMistakes] = useState(0);
 
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio';
 
@@ -86,7 +87,12 @@ const Game = () => {
       addXp(5);
       toast({ title: "Correto! 🎉", description: `+10 Pontos, +5 XP` });
     } else {
-      if (isTrailGame) loseHeart(); // Only lose hearts in trail games
+      if (isTrailGame) {
+          if (answerIndex !== null && answerIndex !== -1) { // Apenas erros contam, não pulos ou tempo esgotado
+            setMistakes(prev => prev + 1);
+          }
+          loseHeart();
+      }
       if (answerIndex === -1) {
         toast({ title: "Tempo esgotado! ⏰", variant: "destructive" });
       } else if (answerIndex === null) { // Pulo
@@ -118,6 +124,13 @@ const Game = () => {
   }, [timeLeft, showResult, gameOver, questions, handleAnswer]);
 
   useEffect(() => {
+    if (isTrailGame && mistakes >= 5) {
+        setGameOver(true);
+        toast({ title: "Limite de erros atingido!", description: "Você cometeu 5 erros e o quiz foi encerrado.", variant: "destructive" });
+    }
+  }, [mistakes, isTrailGame, toast]);
+
+  useEffect(() => {
     if (gameOver && blocoId && isTrailGame) { // Only complete blocks for trail games
       if (!isBlockCompleted(blocoId)) {
         completeBlock(blocoId);
@@ -134,6 +147,7 @@ const Game = () => {
       setSelectedAnswer(null);
       setShowResult(false);
       setGameOver(false);
+      setMistakes(0);
   };
 
   if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
@@ -195,6 +209,7 @@ const Game = () => {
         <GameCard variant="subject" className="p-8 text-center max-w-md">
           <Trophy className="h-16 w-16 mx-auto mb-6 text-warning" />
           <h2 className="text-3xl font-bold mb-4">{isTrailGame ? 'Bloco Finalizado!' : 'Quiz Finalizado!'}</h2>
+          <p className="text-2xl font-bold my-4">Pontuação Final: {score}</p>
           <div className="flex flex-col gap-4 mt-8">
               <Button variant="game" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="flex-1">
                 <CheckCircle className="h-4 w-4 mr-2" />

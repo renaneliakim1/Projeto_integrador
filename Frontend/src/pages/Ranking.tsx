@@ -93,38 +93,58 @@ const Ranking = () => {
     const userName = localStorage.getItem('userName');
     setCurrentUser(userName);
     if (userName) {
-      setUserStudyTopic("Fotossíntese");
+      const userFocus = localStorage.getItem('userFocus');
+      setUserStudyTopic(userFocus);
     }
   }, []);
 
   const { category: categorizedTopic } = useTopicCategorizer(userStudyTopic || "");
 
   const tabs = useMemo(() => {
-    const allSubjects = [
+    const educacaoFisicaRankingData: RankedUser[] = [];
+    const ensinoReligiosoRankingData: RankedUser[] = [];
+    const logicaRankingData: RankedUser[] = [];
+
+    const bnccSubjects = [
         { value: "matematica", label: "Matemática", data: getRankingWithCurrentUser(matematicaRankingData) },
-        { value: "programacao", label: "Programação", data: getRankingWithCurrentUser(programacaoRankingData) },
         { value: "portugues", label: "Português", data: getRankingWithCurrentUser(portuguesRankingData) },
         { value: "geografia", label: "Geografia", data: getRankingWithCurrentUser(geografiaRankingData) },
         { value: "ciencias", label: "Ciências", data: getRankingWithCurrentUser(cienciasRankingData) },
         { value: "historia", label: "História", data: getRankingWithCurrentUser(historiaRankingData) },
         { value: "artes", label: "Artes", data: getRankingWithCurrentUser(artesRankingData) },
         { value: "ingles", label: "Inglês", data: getRankingWithCurrentUser(inglesRankingData) },
-        { value: "filosofia", label: "Filosofia", data: getRankingWithCurrentUser(filosofiaRankingData) },
+        { value: "educacao-fisica", label: "Educação Física", data: getRankingWithCurrentUser(educacaoFisicaRankingData) },
+        { value: "ensino-religioso", label: "Ensino Religioso", data: getRankingWithCurrentUser(ensinoReligiosoRankingData) },
     ];
+
+    const otherSubjects = [
+        { value: "programacao", label: "Programação", data: getRankingWithCurrentUser(programacaoRankingData) },
+        { value: "filosofia", label: "Filosofia", data: getRankingWithCurrentUser(filosofiaRankingData) },
+        { value: "logica", label: "Lógica", data: getRankingWithCurrentUser(logicaRankingData) },
+    ];
+
+    const allSubjects = [...bnccSubjects, ...otherSubjects];
+
     const orderedTabs = [
       { value: "global", label: "Global", data: getRankingWithCurrentUser(globalRankingData) },
       { value: "semanal", label: "Semanal", data: getRankingWithCurrentUser(semanalRankingData) },
     ];
+
     const userFocusKey = categorizedTopic?.toLowerCase();
     const userFocusTab = userFocusKey ? allSubjects.find(s => s.value === userFocusKey) : undefined;
+    
     const mainTabs = new Map<string, typeof allSubjects[0]>();
-    if (userFocusTab) mainTabs.set(userFocusTab.value, userFocusTab);
-    const matematicaTab = allSubjects.find(s => s.value === 'matematica');
-    if(matematicaTab) mainTabs.set(matematicaTab.value, matematicaTab);
+
+    if (userFocusTab) {
+        mainTabs.set(userFocusTab.value, userFocusTab);
+    }
+
     orderedTabs.push(...Array.from(mainTabs.values()));
+    
     allSubjects.forEach(tab => {
         if (!mainTabs.has(tab.value)) orderedTabs.push(tab);
     });
+
     return orderedTabs;
   }, [categorizedTopic]);
 

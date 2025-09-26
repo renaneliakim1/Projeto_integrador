@@ -4,19 +4,44 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Youtube } from 'lucide-react';
+import { trilhaPrincipal } from "@/data/trilhaPrincipal";
+import { subjects } from "@/data/subjects";
 
 const Lesson = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const navigate = useNavigate();
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'Ensino Médio';
+
+  const trilhaBloco = trilhaPrincipal.flatMap(n => n.blocos).find(b => b.id === subjectId);
+  const subjectInfo = subjects.find(s => s.id === subjectId);
+
+  let displayTitle: string;
+  let subjectForAI: string;
+
+  if (trilhaBloco) { // It's a trail game
+    const userFocus = localStorage.getItem('userFocus') || 'Conhecimentos Gerais';
+    if (trilhaBloco.tipo === 'foco') {
+      displayTitle = userFocus;
+      subjectForAI = userFocus;
+    } else {
+      displayTitle = trilhaBloco.titulo;
+      subjectForAI = trilhaBloco.titulo;
+    }
+  } else if (subjectInfo) { // It's a subject game
+    displayTitle = subjectInfo.name;
+    subjectForAI = subjectInfo.name;
+  } else {
+    displayTitle = subjectId || 'Tópico Desconhecido';
+    subjectForAI = subjectId || 'Conhecimentos Gerais';
+  }
   
-  const { generatedLesson, loading, error, refetch } = useLessonAI(subjectId || '', educationalLevel);
+  const { generatedLesson, loading, error, refetch } = useLessonAI(subjectForAI, educationalLevel);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Gerando sua aula...</h2>
+          <h2 className="text-2xl font-bold mb-4">Gerando sua aula de {displayTitle}...</h2>
           <Progress value={null} className="h-3 w-full animate-pulse" />
         </Card>
       </div>
@@ -48,7 +73,7 @@ const Lesson = () => {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-center bg-gradient-primary bg-clip-text text-transparent">
-              Aula de {subjectId}
+              Aula de {displayTitle}
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -10,7 +10,7 @@ interface Question {
 }
 
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY;
-const DEFAULT_MODEL = "gemini-1.5-flash-latest";
+const DEFAULT_MODEL = "gemini-pro";
 
 export const useGenerativeAI = (
   subject: string,
@@ -42,7 +42,7 @@ export const useGenerativeAI = (
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ model: modelName });
 
-      const prompt = `Gere 10 perguntas de múltipla escolha sobre "${subject}" para um estudante com nível de escolaridade "${educationalLevel}".
+      const prompt = `Gere 15 perguntas de múltipla escolha sobre "${subject}" para um estudante com nível de escolaridade "${educationalLevel}".
 O nível de dificuldade das perguntas deve ser proporcional ao nível do usuário na trilha, que é ${nivel} de 30. Nível 1 é o mais fácil e 30 o mais difícil.
 Cada pergunta deve ter 4 opções e indicar a opção correta (índice 0-3).
 Atribua também um nível de dificuldade descritivo (fácil, médio, difícil) a cada pergunta, correspondendo à dificuldade ${nivel}/30.
