@@ -49,6 +49,7 @@ const Dashboard = () => {
   const [userName, setUserName] = useState('Usuário');
   const [chartType, setChartType] = useState('bar'); // 'barras' ou 'radar'
   const [currentView, setCurrentView] = useState('Visão Geral'); // 'visão geral' ou nome da área
+  const [quizNivelamentoConcluido, setQuizNivelamentoConcluido] = useState(false);
   const chartRef = useRef<ChartJS>(null);
 
   const {
@@ -62,10 +63,21 @@ const Dashboard = () => {
   useEffect(() => {
     const name = localStorage.getItem('userName');
     if (name) setUserName(name);
+    
+    const quizConcluido = localStorage.getItem('quizNivelamentoConcluido') === 'true';
+    setQuizNivelamentoConcluido(quizConcluido);
   }, []);
 
   const handleNextExercise = () => {
-    navigate('/trilha');
+    if (quizNivelamentoConcluido) {
+      navigate('/trilha');
+    } else {
+      toast({
+        title: "Quiz de Nivelamento Pendente",
+        description: "Você precisa concluir o quiz de nivelamento antes de acessar as lições.",
+        variant: "destructive",
+      });
+    }
   };
 
   const chartData = useMemo(() => {
@@ -150,10 +162,16 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Link to="/study-plan" className="w-full sm:w-auto">
-            <Button size="lg" variant="outline" className="w-full">Meu Plano de Estudo</Button>
-          </Link>
-          <Button size="lg" className="bg-gradient-knowledge shadow-glow w-full sm:w-auto" onClick={handleNextExercise}>Minha Jornada</Button>
+          {quizNivelamentoConcluido ? (
+            <Link to="/study-plan" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full">Meu Plano de Estudo</Button>
+            </Link>
+          ) : (
+            <Link to="/quiz-nivelamento" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full">Fazer Quiz de nivelamento</Button>
+            </Link>
+          )}
+          <Button size="lg" className="bg-gradient-knowledge shadow-glow w-full sm:w-auto" onClick={handleNextExercise}>Próxima Lição</Button>
         </div>
       </header>
 

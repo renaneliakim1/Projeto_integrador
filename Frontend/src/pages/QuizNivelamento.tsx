@@ -369,6 +369,7 @@ const QuizNivelamento = () => {
         if (planoResponse) {
           setPlanoDeEstudo(planoResponse);
           localStorage.setItem('studyPlan', JSON.stringify(planoResponse));
+          localStorage.setItem('quizNivelamentoConcluido', 'true');
           
           const priorityAreas = planoResponse.analysis.focusPoints;
           if (priorityAreas && priorityAreas.length > 0) {
