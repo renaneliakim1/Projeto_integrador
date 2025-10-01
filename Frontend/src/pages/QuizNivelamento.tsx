@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } fro
 import { Star, Target, Award, TrendingUp, TrendingDown, SkipForward, BookOpenCheck } from 'lucide-react';
 import { useGamification } from "@/hooks/useGamification";
 import { Separator } from "@/components/ui/separator";
+import LoadingAnimation from "@/components/ui/LoadingAnimation";
 
 // Tipo seguro para perguntas do quiz
 type PerguntaQuiz = {
@@ -425,13 +426,10 @@ const QuizNivelamento = () => {
 
   if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold mb-4">Preparando seu Quiz de nivelamento!</h2>
-          <p className="text-muted-foreground">Gerando 25 perguntas personalizadas com IA...</p>
-          <Progress value={undefined} className="w-40 mx-auto mt-4" />
-        </div>
-      </div>
+      <LoadingAnimation 
+        text="Preparando seu Quiz de nivelamento!" 
+        subtext="Gerando 25 perguntas personalizadas com IA..." 
+      />
     );
   }
 
@@ -498,10 +496,10 @@ const QuizNivelamento = () => {
               <CardContent className="flex-grow p-6 space-y-6">
                 {gerandoPlano ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold">Criando seu plano de estudo com IA...</p>
-                      <p className="text-sm text-muted-foreground">Isso pode levar alguns segundos.</p>
-                    </div>
+                    <LoadingAnimation 
+                      text="Criando seu plano de estudo com IA..."
+                      subtext="Isso pode levar alguns segundos."
+                    />
                   </div>
                 ) : planoDeEstudo ? (
                   <div className="space-y-6">

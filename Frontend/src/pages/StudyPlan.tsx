@@ -8,6 +8,7 @@ import { useGamification } from '@/hooks/useGamification';
 import { trilhaPrincipal } from '@/data/trilhaPrincipal';
 import { Separator } from '@/components/ui/separator';
 import { BookOpenCheck } from 'lucide-react';
+import LoadingAnimation from '@/components/ui/LoadingAnimation';
 
 // Tipos do Plano de Estudo (espelhado de QuizNivelamento.tsx)
 type StudyPlanTopic = {
@@ -101,6 +102,7 @@ const StudyPlanDisplay = ({ plan }: { plan: StudyPlan }) => (
 const StudyPlan = () => {
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
   const [isRefazerAtivo, setIsRefazerAtivo] = useState(false);
+  const [carregando, setCarregando] = useState(true);
   const navigate = useNavigate();
   const { level, blocosCompletos } = useGamification();
 
@@ -114,6 +116,8 @@ const StudyPlan = () => {
     } catch (error) {
       console.error("Falha ao carregar o plano de estudo do localStorage:", error);
       setStudyPlan(null); // Garante que o estado é nulo se houver erro
+    } finally {
+      setCarregando(false);
     }
 
     const nivelAtualData = trilhaPrincipal.find(n => n.nivel === level);
@@ -128,6 +132,10 @@ const StudyPlan = () => {
   const handleNavigateToQuiz = () => {
     navigate('/quiz-nivelamento');
   };
+
+  if (carregando) {
+    return <LoadingAnimation text="Carregando seu plano de estudo..." />;
+  }
 
   return (
     <TooltipProvider>
