@@ -95,7 +95,7 @@ const Register = () => {
     if (fotoFile) formData.append('foto', fotoFile);
 
     try {
-      const response = await apiClient.post('/auth/register/', formData, {
+      const response = await apiClient.post('/users/register/', formData, {
         headers: {
           // Força o Content-Type para multipart/form-data para sobrescrever qualquer padrão global do axios.
           'Content-Type': 'multipart/form-data',
