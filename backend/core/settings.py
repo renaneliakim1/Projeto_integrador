@@ -12,10 +12,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -42,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'api',
+
 ]
 
 MIDDLEWARE = [
@@ -148,7 +152,22 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
+# --- Supabase Storage Configuration (using S3 backend) --- (Commented out since saving images in DB)
 
+# Extract Supabase Project ID from URL for convenience
+# SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+# SUPABASE_PROJECT_ID = ''
+# if SUPABASE_URL:
+#     SUPABASE_PROJECT_ID = SUPABASE_URL.split('.')[0].replace('https://', '')
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# The following settings are used by the S3 backend
+# AWS_ACCESS_KEY_ID = SUPABASE_PROJECT_ID # Your Supabase Project ID
+# AWS_SECRET_ACCESS_KEY = os.environ.get('SUPABASE_SERVICE_KEY') # Your Supabase service_role key
+# AWS_STORAGE_BUCKET_NAME = os.environ.get('BUCKET_NAME') # Your Supabase bucket name
+# AWS_S3_ENDPOINT_URL = f'https://{SUPABASE_PROJECT_ID}.supabase.co/storage/v1' # Supabase S3 endpoint
+
+# AWS_S3_FILE_OVERWRITE = False # Do not overwrite files with the same name
+# AWS_DEFAULT_ACL = 'public-read' # Make files public by default
+# AWS_S3_REGION_NAME = 'us-east-1' # Optional: Specify a region

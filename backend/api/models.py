@@ -13,7 +13,7 @@ class UserProfile(models.Model):
     profession = models.CharField(max_length=100, blank=True)
     focus = models.CharField(max_length=100, blank=True)
     terms_accepted = models.BooleanField(default=False)
-    foto = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    foto = models.BinaryField(null=True, blank=True)
 
 class AreaBNCC(models.Model):
     name = models.CharField(max_length=100, unique=True)

@@ -1,0 +1,3 @@
+- [ ] Fix profile photo upload in edit profile to handle dataURL properly in backend
+- [ ] Test photo upload in register and edit profile
+- [ ] Ensure photos are saved in database as binary

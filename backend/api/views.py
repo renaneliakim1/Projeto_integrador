@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+import base64
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -40,6 +41,58 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         # Retorna o usuário associado à requisição atual
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        profile = user.profile
+
+        # Update user fields
+        first_name = request.data.get('first_name')
+        email = request.data.get('email')
+
+        if first_name is not None:
+            user.first_name = first_name
+        if email is not None:
+            # Check if email is unique
+            if User.objects.filter(email=email).exclude(id=user.id).exists():
+                return Response({'email': ['Já existe uma conta com este e-mail.']}, status=status.HTTP_400_BAD_REQUEST)
+            user.email = email
+            user.username = email  # Assuming username is email
+
+        user.save()
+
+        # Update profile fields
+        birth_date = request.data.get('profile.birth_date')
+        educational_level = request.data.get('profile.educational_level')
+        profession = request.data.get('profile.profession')
+        focus = request.data.get('profile.focus')
+        foto = request.data.get('profile.foto')  # This will be the dataURL or base64 string
+
+        if birth_date is not None:
+            profile.birth_date = birth_date
+        if educational_level is not None:
+            profile.educational_level = educational_level
+        if profession is not None:
+            profile.profession = profession
+        if focus is not None:
+            profile.focus = focus
+        if foto is not None and foto != '':
+            try:
+                if foto.startswith('data:image/'):
+                    base64_data = foto.split(',')[1]
+                    profile.foto = base64.b64decode(base64_data)
+                else:
+                    profile.foto = base64.b64decode(foto)
+            except Exception:
+                return Response({'profile.foto': ['Foto inválida.']}, status=status.HTTP_400_BAD_REQUEST)
+        elif foto == '':
+            profile.foto = None  # Allow clearing the photo
+
+        profile.save()
+
+        # Return the serialized data
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
 
 class UpdatePerformanceView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]

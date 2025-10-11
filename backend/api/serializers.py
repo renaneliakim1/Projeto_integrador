@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.validators import UniqueValidator
 from django.utils import timezone
+import base64
 
 class UserSerializer(serializers.ModelSerializer):
     # Trazendo os campos do perfil para o serializer principal.
@@ -14,10 +15,10 @@ class UserSerializer(serializers.ModelSerializer):
     educational_level = serializers.CharField(write_only=True, required=False, allow_blank=True)
     profession = serializers.CharField(write_only=True, required=False, allow_blank=True)
     focus = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    foto = serializers.ImageField(write_only=True, required=False)
+    foto = serializers.FileField(write_only=True, required=False)
     # Este campo deve ser obrigatoriamente `True`.
     # Adicionamos um validador para garantir isso.
-    terms_accepted = serializers.BooleanField(
+    terms_accepted = serializers.CharField(
         write_only=True,
     )
 
@@ -43,14 +44,21 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate_terms_accepted(self, value):
-        if not value:
+        if value.lower() != 'true':
             raise ValidationError("Você deve aceitar os termos e condições para se registrar.")
-        return value
+        return True
 
     def create(self, validated_data):
         # Separamos os dados que pertencem ao UserProfile
         profile_fields = ['birth_date', 'educational_level', 'profession', 'focus', 'terms_accepted', 'foto']
         profile_data = {field: validated_data.pop(field) for field in profile_fields if field in validated_data}
+
+        # Read foto if present
+        if 'foto' in profile_data and profile_data['foto']:
+            try:
+                profile_data['foto'] = profile_data['foto'].read()
+            except Exception:
+                raise ValidationError("Foto inválida.")
 
         # Usamos o email como username para garantir unicidade e facilitar o login
         user = User.objects.create_user(
@@ -138,9 +146,8 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         fields = ('birth_date', 'educational_level', 'profession', 'focus', 'foto', 'gamification', 'achievements', 'daily_quests')
 
     def get_foto(self, obj):
-        request = self.context.get('request')
-        if obj.foto and request:
-            return request.build_absolute_uri(obj.foto.url)
+        if obj.foto:
+            return f"data:image/png;base64,{base64.b64encode(obj.foto).decode('utf-8')}"
         return None
 
     def get_daily_quests(self, obj):

@@ -37,7 +37,7 @@ const EditProfile = () => {
   const [profissao, setProfissao] = useState("");
   const [foco, setFoco] = useState("");
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoFile, setFotoFile] = useState<string | null>(null);
 
   // State for password change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -85,8 +85,13 @@ const EditProfile = () => {
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFotoFile(file);
-      setFotoPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setFotoFile(base64);  // Now storing base64 string
+        setFotoPreview(base64);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
