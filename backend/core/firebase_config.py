@@ -1,6 +1,10 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 db = None
 
@@ -9,7 +13,7 @@ def initialize_firebase():
     Initializes the Firebase Admin SDK and returns the Firestore client.
 
     This function constructs the path to the service account key file dynamically.
-    It expects the filename to be set in the `FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME` 
+    It expects the filename to be set in the `FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME`
     environment variable.
     """
     global db

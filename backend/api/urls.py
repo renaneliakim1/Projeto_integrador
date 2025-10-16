@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView
+from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView, hello_world
 
 urlpatterns = [
+    path("hello/", hello_world, name="hello"),
     path("users/register/", CreateUserView.as_view(), name="register"),
     path("users/me/", UserProfileView.as_view(), name="user-detail"),
     path('performance/update/', UpdatePerformanceView.as_view(), name='update-performance'),

@@ -5,7 +5,10 @@ from .serializers import UserSerializer
 from django.utils import timezone
 import base64
 from firebase_admin import auth, firestore
-from core.firebase_config import db
+from core.firebase_config import initialize_firebase
+
+# Initialize Firebase if not already done
+db = initialize_firebase()
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -18,6 +21,12 @@ class CreateUserView(generics.CreateAPIView):
         validated_data = serializer.validated_data
 
         try:
+            # Handle photo encoding
+            foto_base64 = None
+            if 'foto' in validated_data and validated_data['foto'] is not None:
+                foto_file = validated_data['foto']
+                foto_base64 = base64.b64encode(foto_file.read()).decode('utf-8')
+
             # Create user in Firebase Authentication
             user = auth.create_user(
                 email=validated_data['email'],
@@ -25,14 +34,18 @@ class CreateUserView(generics.CreateAPIView):
                 display_name=validated_data.get('first_name', '')
             )
 
-            # Create user profile in Firestore
+            # Prepare profile data, converting date to string
+            birth_date = validated_data.get('birth_date')
+            if birth_date:
+                birth_date = birth_date.isoformat()
+
             profile_data = {
-                'birth_date': validated_data.get('birth_date'),
+                'birth_date': birth_date,
                 'educational_level': validated_data.get('educational_level'),
                 'profession': validated_data.get('profession'),
                 'focus': validated_data.get('focus'),
                 'terms_accepted': validated_data.get('terms_accepted'),
-                'foto': None  # Photo upload will be handled separately
+                'foto': foto_base64
             }
             db.collection('user_profiles').document(user.uid).set(profile_data)
 

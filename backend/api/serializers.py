@@ -10,6 +10,7 @@ class UserSerializer(serializers.Serializer):
     profession = serializers.CharField(required=False, allow_blank=True)
     focus = serializers.CharField(required=False, allow_blank=True)
     terms_accepted = serializers.BooleanField(write_only=True)
+    foto = serializers.ImageField(required=False, allow_null=True)
 
     def validate_terms_accepted(self, value):
         if not value:
