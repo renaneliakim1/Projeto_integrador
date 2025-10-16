@@ -17,6 +17,7 @@ def initialize_firebase():
     environment variable.
     """
     global db
+    
     try:
         if firebase_admin._apps:
             if not db:
