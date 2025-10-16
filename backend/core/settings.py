@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'api',
+    'management.apps.ManagementConfig',
 
 ]
 
@@ -81,17 +82,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': 'db.cpqecntjnimngamjzznr.supabase.co',
-        'PORT': '5432',
-    }
-}
+# This configuration is no longer in use as we are migrating to Firebase Firestore.
+# The database connection is now handled by the Firebase Admin SDK.
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'postgres',
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': 'db.cpqecntjnimngamjzznr.supabase.co',
+#         'PORT': '5432',
+#     }
+# }
 
 
 # Password validation
@@ -171,3 +173,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 # AWS_S3_FILE_OVERWRITE = False # Do not overwrite files with the same name
 # AWS_DEFAULT_ACL = 'public-read' # Make files public by default
 # AWS_S3_REGION_NAME = 'us-east-1' # Optional: Specify a region
+
+# Initialize Firebase
+from .firebase_config import initialize_firebase
+initialize_firebase()
