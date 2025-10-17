@@ -41,7 +41,7 @@ def initialize_firebase():
 
         cred = credentials.Certificate(service_account_key_path)
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://skillio-projeto-default-rtdb.firebaseio.com/'  # Replace with your Realtime DB URL
+            'databaseURL': 'https://skillio-22700-default-rtdb.firebaseio.com/'  # Replace with your Realtime DB URL
         })
         firebase_db = db.reference()
         print("Firebase initialized successfully.")
