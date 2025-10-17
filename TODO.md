@@ -1,3 +1,6 @@
-- [ ] Fix profile photo upload in edit profile to handle dataURL properly in backend
-- [ ] Test photo upload in register and edit profile
-- [ ] Ensure photos are saved in database as binary
+- [x] Comentar configuração DATABASES no backend/core/settings.py para remover SQLite
+- [x] Descomentar inicialização do Firebase no backend/core/settings.py
+- [x] Executar 'python manage.py migrate --fake' para ignorar migrações existentes
+- [x] Testar o backend para confirmar que roda com Firebase apenas
+- [ ] Refatorar código para usar Realtime Database (gratuito)
+- [ ] Testar registro de usuário e quests

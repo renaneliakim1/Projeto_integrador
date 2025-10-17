@@ -52,14 +52,9 @@ Siga as instruções abaixo para configurar e rodar o ambiente de desenvolviment
 
 6.  **Inicie o servidor de desenvolvimento:**
 
-    ```bash
-    chunk-T2SWDQEL.js?v=0784d30b:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent:1  Failed to load resource: the server responded with a status of 404 ()
-127.0.0.1:8000/api/v1/users/me/:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
-Lesson.tsx:69 Failed to fetch user focus AxiosError
-fetchUserFocus @ Lesson.tsx:69
-generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent:1  Failed to load resource: the server responded with a status of 404 ()
-
-    ```
+   2. Inicie o servidor:
+   ```bash
+   python manage.py runserver
+   ```
 
 O servidor estará rodando em `http://127.0.0.1:8000/`.

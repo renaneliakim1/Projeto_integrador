@@ -8,64 +8,64 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="""
-            ALTER TABLE api_userprofile DROP CONSTRAINT IF EXISTS api_userprofile_user_id_5a1c1c92_fk_auth_user_id;
-            ALTER TABLE api_userprofile ADD CONSTRAINT api_userprofile_user_id_5a1c1c92_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
-            """,
-            reverse_sql="""
-            ALTER TABLE api_userprofile DROP CONSTRAINT IF EXISTS api_userprofile_user_id_5a1c1c92_fk_auth_user_id;
-            ALTER TABLE api_userprofile ADD CONSTRAINT api_userprofile_user_id_5a1c1c92_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
-            """
-        ),
-        migrations.RunSQL(
-            sql="""
-            ALTER TABLE api_userperformance DROP CONSTRAINT IF EXISTS api_userperformance_user_id_52958fd9_fk_auth_user_id;
-            ALTER TABLE api_userperformance ADD CONSTRAINT api_userperformance_user_id_52958fd9_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
-            """,
-            reverse_sql="""
-            ALTER TABLE api_userperformance DROP CONSTRAINT IF EXISTS api_userperformance_user_id_52958fd9_fk_auth_user_id;
-            ALTER TABLE api_userperformance ADD CONSTRAINT api_userperformance_user_id_52958fd9_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
-            """
-        ),
-        migrations.RunSQL(
-            sql="""
-            ALTER TABLE api_activitylog DROP CONSTRAINT IF EXISTS api_activitylog_user_id_460724d0_fk_auth_user_id;
-            ALTER TABLE api_activitylog ADD CONSTRAINT api_activitylog_user_id_460724d0_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
-            """,
-            reverse_sql="""
-            ALTER TABLE api_activitylog DROP CONSTRAINT IF EXISTS api_activitylog_user_id_460724d0_fk_auth_user_id;
-            ALTER TABLE api_activitylog ADD CONSTRAINT api_activitylog_user_id_460724d0_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
-            """
-        ),
-        migrations.RunSQL(
-            sql="""
-            ALTER TABLE api_gamification DROP CONSTRAINT IF EXISTS api_gamification_user_id_af1e6077_fk_auth_user_id;
-            ALTER TABLE api_gamification ADD CONSTRAINT api_gamification_user_id_af1e6077_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
-            """,
-            reverse_sql="""
-            ALTER TABLE api_gamification DROP CONSTRAINT IF EXISTS api_gamification_user_id_af1e6077_fk_auth_user_id;
-            ALTER TABLE api_gamification ADD CONSTRAINT api_gamification_user_id_af1e6077_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
-            """
-        ),
-        migrations.RunSQL(
-            sql="""
-            ALTER TABLE api_userachievement DROP CONSTRAINT IF EXISTS api_userachievement_user_id_3f1bed56_fk_auth_user_id;
-            ALTER TABLE api_userachievement ADD CONSTRAINT api_userachievement_user_id_3f1bed56_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
-            """,
-            reverse_sql="""
-            ALTER TABLE api_userachievement DROP CONSTRAINT IF EXISTS api_userachievement_user_id_3f1bed56_fk_auth_user_id;
-            ALTER TABLE api_userachievement ADD CONSTRAINT api_userachievement_user_id_3f1bed56_fk_auth_user_id
-            FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
-            """
-        ),
+        # migrations.RunSQL(
+        #     sql="""
+        #     ALTER TABLE api_userprofile DROP CONSTRAINT IF EXISTS api_userprofile_user_id_5a1c1c92_fk_auth_user_id;
+        #     ALTER TABLE api_userprofile ADD CONSTRAINT api_userprofile_user_id_5a1c1c92_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
+        #     """,
+        #     reverse_sql="""
+        #     ALTER TABLE api_userprofile DROP CONSTRAINT IF EXISTS api_userprofile_user_id_5a1c1c92_fk_auth_user_id;
+        #     ALTER TABLE api_userprofile ADD CONSTRAINT api_userprofile_user_id_5a1c1c92_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
+        #     """
+        # ),
+        # migrations.RunSQL(
+        #     sql="""
+        #     ALTER TABLE api_userperformance DROP CONSTRAINT IF EXISTS api_userperformance_user_id_52958fd9_fk_auth_user_id;
+        #     ALTER TABLE api_userperformance ADD CONSTRAINT api_userperformance_user_id_52958fd9_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
+        #     """,
+        #     reverse_sql="""
+        #     ALTER TABLE api_userperformance DROP CONSTRAINT IF EXISTS api_userperformance_user_id_52958fd9_fk_auth_user_id;
+        #     ALTER TABLE api_userperformance ADD CONSTRAINT api_userperformance_user_id_52958fd9_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
+        #     """
+        # ),
+        # migrations.RunSQL(
+        #     sql="""
+        #     ALTER TABLE api_activitylog DROP CONSTRAINT IF EXISTS api_activitylog_user_id_460724d0_fk_auth_user_id;
+        #     ALTER TABLE api_activitylog ADD CONSTRAINT api_activitylog_user_id_460724d0_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
+        #     """,
+        #     reverse_sql="""
+        #     ALTER TABLE api_activitylog DROP CONSTRAINT IF EXISTS api_activitylog_user_id_460724d0_fk_auth_user_id;
+        #     ALTER TABLE api_activitylog ADD CONSTRAINT api_activitylog_user_id_460724d0_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
+        #     """
+        # ),
+        # migrations.RunSQL(
+        #     sql="""
+        #     ALTER TABLE api_gamification DROP CONSTRAINT IF EXISTS api_gamification_user_id_af1e6077_fk_auth_user_id;
+        #     ALTER TABLE api_gamification ADD CONSTRAINT api_gamification_user_id_af1e6077_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
+        #     """,
+        #     reverse_sql="""
+        #     ALTER TABLE api_gamification DROP CONSTRAINT IF EXISTS api_gamification_user_id_af1e6077_fk_auth_user_id;
+        #     ALTER TABLE api_gamification ADD CONSTRAINT api_gamification_user_id_af1e6077_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
+        #     """
+        # ),
+        # migrations.RunSQL(
+        #     sql="""
+        #     ALTER TABLE api_userachievement DROP CONSTRAINT IF EXISTS api_userachievement_user_id_3f1bed56_fk_auth_user_id;
+        #     ALTER TABLE api_userachievement ADD CONSTRAINT api_userachievement_user_id_3f1bed56_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE CASCADE;
+        #     """,
+        #     reverse_sql="""
+        #     ALTER TABLE api_userachievement DROP CONSTRAINT IF EXISTS api_userachievement_user_id_3f1bed56_fk_auth_user_id;
+        #     ALTER TABLE api_userachievement ADD CONSTRAINT api_userachievement_user_id_3f1bed56_fk_auth_user_id
+        #     FOREIGN KEY (user_id) REFERENCES public.auth_user(id) ON DELETE RESTRICT;
+        #     """
+        # ),
     ]

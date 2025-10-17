@@ -4,11 +4,11 @@ from rest_framework import generics, permissions, status
 from .serializers import UserSerializer
 from django.utils import timezone
 import base64
-from firebase_admin import auth, firestore
+from firebase_admin import auth
 from core.firebase_config import initialize_firebase
 
 # Initialize Firebase if not already done
-db = initialize_firebase()
+firebase_db = initialize_firebase()
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -47,15 +47,15 @@ class CreateUserView(generics.CreateAPIView):
                 'terms_accepted': validated_data.get('terms_accepted'),
                 'foto': foto_base64
             }
-            db.collection('user_profiles').document(user.uid).set(profile_data)
+            firebase_db.child('user_profiles').child(user.uid).set(profile_data)
 
-            # Create gamification entry in Firestore
+            # Create gamification entry in Realtime DB
             gamification_data = {
                 'level': 1,
                 'xp': 0,
                 'streak': 0
             }
-            db.collection('gamification').document(user.uid).set(gamification_data)
+            firebase_db.child('gamification').child(user.uid).set(gamification_data)
 
             # Generate custom token for the user
             custom_token = auth.create_custom_token(user.uid)
@@ -91,33 +91,31 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
             # Basic user data from Firebase Auth
             user_data = auth.get_user(user_id)
 
-            # Profile data from Firestore
-            user_profile_ref = db.collection('user_profiles').document(user_id)
-            user_profile = user_profile_ref.get()
-            profile_data = user_profile.to_dict() if user_profile.exists else {}
+            # Profile data from Realtime DB
+            user_profile_ref = firebase_db.child('user_profiles').child(user_id)
+            profile_data = user_profile_ref.get() or {}
 
-            # Gamification data from Firestore
-            gamification_ref = db.collection('gamification').document(user_id)
-            gamification = gamification_ref.get()
-            gamification_data = gamification.to_dict() if gamification.exists else {}
+            # Gamification data from Realtime DB
+            gamification_ref = firebase_db.child('gamification').child(user_id)
+            gamification_data = gamification_ref.get() or {}
 
-            # Achievements data from Firestore
-            user_achievements_ref = db.collection('user_achievements').where('user_id', '==', user_id).stream()
-            achievements_.data = [ach.to_dict() for ach in user_achievements_ref]
+            # Achievements data from Realtime DB
+            user_achievements_ref = firebase_db.child('user_achievements').order_by_child('user_id').equal_to(user_id)
+            achievements_data = user_achievements_ref.get() or []
 
-            # Daily quests data from Firestore
-            quests_ref = db.collection('quests').where('type', '==', 'daily').stream()
+            # Daily quests data from Realtime DB
+            quests_ref = firebase_db.child('quests').order_by_child('type').equal_to('daily')
+            quests_data = quests_ref.get() or {}
             daily_quests_data = []
-            for quest in quests_ref:
-                user_quest_ref = db.collection('user_quests').document(f'{user_id}_{quest.id}_{today}')
+            for quest_id, quest_data in quests_data.items():
+                user_quest_ref = firebase_db.child('user_quests').child(f'{user_id}_{quest_id}_{today}')
                 user_quest = user_quest_ref.get()
-                quest_data = quest.to_dict()
-                quest_data['is_completed'] = user_quest.exists and user_quest.to_dict().get('is_completed', False)
+                quest_data['is_completed'] = user_quest and user_quest.get('is_completed', False)
                 daily_quests_data.append(quest_data)
 
-            # Performance data from Firestore
-            performance_ref = db.collection('user_performances').where('user_id', '==', user_id).stream()
-            performance_data = [p.to_dict() for p in performance_ref]
+            # Performance data from Realtime DB
+            performance_ref = firebase_db.child('user_performances').order_by_child('user_id').equal_to(user_id)
+            performance_data = performance_ref.get() or []
 
             response_data = {
                 'id': user_data.uid,
@@ -137,8 +135,8 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         try:
-            user_profile_ref = db.collection('user_profiles').document(request.user_id)
-            
+            user_profile_ref = firebase_db.child('user_profiles').child(request.user_id)
+
             # Fields to update
             update_data = {}
             allowed_fields = ['birth_date', 'educational_level', 'profession', 'focus']
@@ -178,41 +176,29 @@ class UpdatePerformanceView(generics.GenericAPIView):
 
                 # Log activity
                 if correct > 0:
-                    activity_log_ref = db.collection('activity_logs').document(f'{user_id}_{today}_pratica')
-                    activity_log_ref.set({
+                    firebase_db.child('activity_logs').child(f'{user_id}_{today}_pratica').set({
                         'user_id': user_id,
                         'date': today,
                         'type': 'pratica'
                     })
                 if incorrect > 0:
-                    activity_log_ref = db.collection('activity_logs').document(f'{user_id}_{today}_falha')
-                    activity_log_ref.set({
+                    firebase_db.child('activity_logs').child(f'{user_id}_{today}_falha').set({
                         'user_id': user_id,
                         'date': today,
                         'type': 'falha'
                     })
 
                 # Update performance
-                performance_ref = db.collection('user_performances').document(f'{user_id}_{subject_name}')
-
-                @firestore.transactional
-                def update_in_transaction(transaction, doc_ref):
-                    snapshot = doc_ref.get(transaction=transaction)
-                    if snapshot.exists:
-                        transaction.update(doc_ref, {
-                            'correct_answers': firestore.Increment(correct),
-                            'incorrect_answers': firestore.Increment(incorrect)
-                        })
-                    else:
-                        transaction.set(doc_ref, {
-                            'user_id': user_id,
-                            'subject': subject_name,
-                            'correct_answers': correct,
-                            'incorrect_answers': incorrect
-                        })
-                
-                transaction = db.transaction()
-                update_in_transaction(transaction, performance_ref)
+                performance_ref = firebase_db.child('user_performances').child(f'{user_id}_{subject_name}')
+                current_data = performance_ref.get() or {}
+                new_correct = current_data.get('correct_answers', 0) + correct
+                new_incorrect = current_data.get('incorrect_answers', 0) + incorrect
+                performance_ref.set({
+                    'user_id': user_id,
+                    'subject': subject_name,
+                    'correct_answers': new_correct,
+                    'incorrect_answers': new_incorrect
+                })
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
@@ -224,9 +210,10 @@ class ActivityLogView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         user_id = request.user_id
         try:
-            logs_ref = db.collection('activity_logs').where('user_id', '==', user_id).stream()
-            logs = [log.to_dict() for log in logs_ref]
-            return Response(logs, status=status.HTTP_200_OK)
+            logs_ref = firebase_db.child('activity_logs').order_by_child('user_id').equal_to(user_id)
+            logs = logs_ref.get() or {}
+            logs_list = [log for log in logs.values()]
+            return Response(logs_list, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -243,17 +230,12 @@ class AddXpView(generics.GenericAPIView):
         user_id = request.user_id
 
         try:
-            gamification_ref = db.collection('gamification').document(user_id)
-            gamification_doc = gamification_ref.get()
+            gamification_ref = firebase_db.child('gamification').child(user_id)
+            gamification_data = gamification_ref.get() or {}
 
-            if not gamification_doc.exists:
-                return Response({'error': 'Gamification data not found for this user.'}, status=status.HTTP_404_NOT_FOUND)
-
-            gamification_data = gamification_doc.to_dict()
-            
             current_level = gamification_data.get('level', 1)
             current_xp = gamification_data.get('xp', 0)
-            
+
             new_xp = current_xp + amount
             new_level = current_level
 
@@ -268,7 +250,7 @@ class AddXpView(generics.GenericAPIView):
                 'level': new_level,
                 'xp': new_xp
             })
-            
+
             return Response({
                 'new_level': new_level,
                 'new_xp': new_xp
@@ -286,19 +268,18 @@ class CompleteQuestView(generics.GenericAPIView):
         today = timezone.now().date().isoformat()
 
         try:
-            # Assume quests are predefined and fetched from a 'quests' collection
-            quest_ref = db.collection('quests').document(quest_id)
-            quest_doc = quest_ref.get()
+            # Assume quests are predefined and fetched from Realtime DB
+            quest_ref = firebase_db.child('quests').child(quest_id)
+            quest_data = quest_ref.get()
 
-            if not quest_doc.exists:
+            if not quest_data:
                 return Response({'error': 'Quest not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            quest_data = quest_doc.to_dict()
             xp_reward = quest_data.get('xp_reward', 0)
 
-            user_quest_ref = db.collection('user_quests').document(f'{user_id}_{quest_id}_{today}')
+            user_quest_ref = firebase_db.child('user_quests').child(f'{user_id}_{quest_id}_{today}')
 
-            if user_quest_ref.get().exists:
+            if user_quest_ref.get():
                 # Quest already completed today
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -311,35 +292,25 @@ class CompleteQuestView(generics.GenericAPIView):
             })
 
             # Add XP and potentially level up
-            gamification_ref = db.collection('gamification').document(user_id)
+            gamification_ref = firebase_db.child('gamification').child(user_id)
+            gamification_data = gamification_ref.get() or {}
 
-            @firestore.transactional
-            def update_xp_in_transaction(transaction, gamification_ref, amount):
-                snapshot = gamification_ref.get(transaction=transaction)
-                if not snapshot.exists:
-                    # This case should ideally not happen if gamification data is created at user registration
-                    return
+            current_level = gamification_data.get('level', 1)
+            current_xp = gamification_data.get('xp', 0)
 
-                current_data = snapshot.to_dict()
-                current_level = current_data.get('level', 1)
-                current_xp = current_data.get('xp', 0)
+            new_xp = current_xp + xp_reward
+            new_level = current_level
 
-                new_xp = current_xp + amount
-                new_level = current_level
+            xp_for_next_level = 100 * (current_level ** 1.5)
+            while new_xp >= xp_for_next_level:
+                new_level += 1
+                new_xp -= xp_for_next_level
+                xp_for_next_level = 100 * (new_level ** 1.5)
 
-                xp_for_next_level = 100 * (current_level ** 1.5)
-                while new_xp >= xp_for_next_level:
-                    new_level += 1
-                    new_xp -= xp_for_next_level
-                    xp_for_next_level = 100 * (new_level ** 1.5)
-
-                transaction.update(gamification_ref, {
-                    'level': new_level,
-                    'xp': int(new_xp)
-                })
-
-            transaction = db.transaction()
-            update_xp_in_transaction(transaction, gamification_ref, xp_reward)
+            gamification_ref.update({
+                'level': new_level,
+                'xp': new_xp
+            })
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
