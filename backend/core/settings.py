@@ -88,7 +88,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': 'db.cpqecntjnimngamjzznr.supabase.co',
+        'HOST': 'database-1.ctg0eyqokqwa.us-east-2.rds.amazonaws.com',
         'PORT': '5432',
     }
 }
