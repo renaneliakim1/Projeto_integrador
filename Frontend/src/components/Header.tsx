@@ -21,11 +21,10 @@ const Header = () => {
       if (isAuthenticated) {
         try {
           const response = await apiClient.get('/users/me/');
-          setUserProfile({ 
-            first_name: response.data.first_name, 
-            foto: response.data.profile.foto 
-          });
-        } catch (error) {
+                    setUserProfile({
+                      first_name: response.data.first_name,
+                      foto: response.data.profile ? response.data.profile.foto : null
+                    });        } catch (error) {
           console.error("Failed to fetch user data for header", error);
         }
       }
@@ -105,8 +104,8 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/login"><Button variant="outline" size="sm" className="border-primary/50">Entrar</Button></Link>
-                <Link to="/register"><Button size="sm" className="bg-gradient-knowledge shadow-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>
+                {location.pathname !== '/login' && <Link to="/login"><Button variant="outline" size="sm" className="border-primary/50">Entrar</Button></Link>}
+                {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-gradient-knowledge shadow-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>}
               </>
             )}
           </div>
