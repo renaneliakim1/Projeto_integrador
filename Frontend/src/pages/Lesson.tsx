@@ -7,8 +7,7 @@ import { ArrowLeft, Loader2, PlayCircle } from 'lucide-react';
 import { trilhaPrincipal } from "@/data/trilhaPrincipal";
 import { subjects } from "@/data/subjects";
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import apiClient from '@/api/axios';
+import { useGamification } from '@/hooks/useGamification';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
@@ -47,35 +46,13 @@ interface Video {
 const Lesson = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'Ensino Médio';
-
-  const [userFocus, setUserFocus] = useState('Conhecimentos Gerais');
-  const [isLoadingFocus, setIsLoadingFocus] = useState(true);
+  const { userFocus, isLoading: isLoadingFocus } = useGamification();
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
 
-  useEffect(() => {
-    const fetchUserFocus = async () => {
-      if (isAuthenticated) {
-        setIsLoadingFocus(true);
-        try {
-          const response = await apiClient.get('/users/me/');
-          if (response.data.profile && response.data.profile.focus) {
-            setUserFocus(response.data.profile.focus);
-          }
-        } catch (error) {
-          console.error("Failed to fetch user focus", error);
-        } finally {
-          setIsLoadingFocus(false);
-        }
-      } else {
-        setIsLoadingFocus(false);
-      }
-    };
-    fetchUserFocus();
-  }, [isAuthenticated]);
+  // userFocus and isLoadingFocus are provided by useGamification (centralized source)
 
   const trilhaBloco = trilhaPrincipal.flatMap(n => n.blocos).find(b => b.id === subjectId);
   const subjectInfo = subjects.find(s => s.id === subjectId);

@@ -91,16 +91,17 @@ const Game = () => {
     const isCorrect = answerIndex === questions[currentQuestion]?.correct;
   if (isCorrect) {
     setSessionAnswers(prev => ({ ...prev, correct: prev.correct + 1 }));
-    // Sempre contabiliza pontos imediatamente ao acertar, mesmo em jogos de trilha.
-    // Mantemos `pendingScore`/`pendingXp` para o fluxo de conclusão do bloco (exibição/registro),
-    // mas evitamos premiar esses valores novamente ao finalizar o bloco para não duplicar pontos.
+    // Sempre contabiliza pontos de score imediatamente ao acertar.
+    // Em jogos de trilha, adiamos a atribuição de XP ao backend até a finalização do bloco
+    // (o usuário precisa completar as 15 perguntas do nível para receber o XP do bloco).
     setScore(prevScore => prevScore + 10);
-    addXp(5);
     if (isTrailGame) {
       setPendingScore(prev => prev + 10);
       setPendingXp(prev => prev + 5);
       toast({ title: "Correto! 🎉" });
     } else {
+      // Para quizzes avulsos (não-trilha), damos XP imediatamente
+      addXp(5);
       toast({ title: "Correto! 🎉", description: `+10 Pontos, +5 XP` });
     }
   } else {
@@ -149,7 +150,9 @@ const Game = () => {
   }, [mistakes, isTrailGame, toast]);
 
   useEffect(() => {
-    if (gameOver) {
+    const handleGameOver = async () => {
+      if (!gameOver) return;
+
       updatePerformance([{
         subject: subject,
         correct: sessionAnswers.correct,
@@ -158,12 +161,18 @@ const Game = () => {
 
       if (blocoId && isTrailGame) {
         if (mistakes < 5 && !isBlockCompleted(blocoId)) { // Player won
-          // Os pontos foram contabilizados ao longo do jogo; aqui apenas finalizamos o bloco
-          // e informamos o usuário que os pontos já foram aplicados durante as respostas.
+          // Ao concluir o bloco, persistimos o XP ganho durante o bloco no backend
+          if (pendingXp > 0) {
+            try {
+              await addXp(pendingXp);
+            } catch (e) {
+              console.error('Failed to persist pending XP', e);
+            }
+          }
           completeBlock(blocoId);
           toast({
             title: "Bloco Concluído!",
-            description: `Parabéns! Você completou o bloco. (${pendingScore} pontos e ${pendingXp} XP foram contabilizados durante o jogo.)`,
+            description: `Parabéns! Você completou o bloco. (${pendingScore} pontos ganhos durante o jogo.)`,
           });
           // Após uma breve pausa para o usuário ver a tela de conclusão, redirecionamos para a Trilha
           setTimeout(() => {
@@ -173,7 +182,9 @@ const Game = () => {
           resetHearts();
         }
       }
-    }
+    };
+
+    handleGameOver();
   }, [gameOver, blocoId, isTrailGame, completeBlock, isBlockCompleted, navigate, toast, pendingScore, pendingXp, addXp, mistakes, resetHearts, subject, sessionAnswers, updatePerformance]);
 
   const resetGame = () => {

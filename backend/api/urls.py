@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView
+from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView, CompleteBlockView
 from .views import LoseHeartView, ResetHeartsView, RefillHeartsView
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('study/gamification/lose-heart/', LoseHeartView.as_view(), name='lose-heart'),
     path('study/gamification/reset-hearts/', ResetHeartsView.as_view(), name='reset-hearts'),
     path('study/gamification/refill/', RefillHeartsView.as_view(), name='refill-hearts'),
+    path('study/gamification/complete-block/', CompleteBlockView.as_view(), name='complete-block'),
 ]

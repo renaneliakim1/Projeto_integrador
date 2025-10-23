@@ -14,6 +14,14 @@ class UserProfile(models.Model):
     focus = models.CharField(max_length=100, blank=True)
     terms_accepted = models.BooleanField(default=False)
     foto = models.BinaryField(null=True, blank=True)
+    # Lista de blocos completados pelo usuário (armazenada como JSON)
+    try:
+        from django.db.models import JSONField
+        blocos_completos = JSONField(default=list, blank=True)
+    except Exception:
+        # Fallback to TextField if JSONField isn't available on older Django
+        from django.db import models as _models
+        blocos_completos = _models.TextField(default='[]', blank=True)
 
 class AreaBNCC(models.Model):
     name = models.CharField(max_length=100, unique=True)

@@ -143,7 +143,7 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         # O campo 'foto' será serializado como uma URL completa.
-        fields = ('birth_date', 'educational_level', 'profession', 'focus', 'foto', 'gamification', 'achievements', 'daily_quests')
+        fields = ('birth_date', 'educational_level', 'profession', 'focus', 'foto', 'gamification', 'achievements', 'daily_quests', 'blocos_completos')
 
     def get_foto(self, obj):
         if obj.foto:

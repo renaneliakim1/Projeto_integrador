@@ -193,9 +193,23 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         if (!blocosCompletos.includes(blockId)) {
             setBlocosCompletos(prev => [...prev, blockId]);
         }
-        // Tenta notificar o backend (se o endpoint existir). Falha silenciosa se não existir.
+        // Notifica o backend para persistir; se retornar a lista atualizada, usamos ela para sincronizar
         try {
-            await apiClient.post(`/study/gamification/complete-block/`, { block_id: blockId });
+            const resp = await apiClient.post(`/study/gamification/complete-block/`, { block_id: blockId });
+            if (resp && resp.data && resp.data.blocos_completos) {
+                const serverList = resp.data.blocos_completos;
+                // Normalize possible JSON-string responses
+                if (typeof serverList === 'string') {
+                    try {
+                        const parsed = JSON.parse(serverList);
+                        setBlocosCompletos(parsed);
+                    } catch (e) {
+                        // fallback: ignore
+                    }
+                } else if (Array.isArray(serverList)) {
+                    setBlocosCompletos(serverList);
+                }
+            }
         } catch (e) {
             // Não bloquear a UX por conta de falha na rede / endpoint ausente
             console.warn('Failed to persist block completion to backend', e);

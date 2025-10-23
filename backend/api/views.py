@@ -266,3 +266,40 @@ class CompleteQuestView(generics.GenericAPIView):
                 gamification.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CompleteBlockView(generics.GenericAPIView):
+    """Marca um bloco como completo no perfil do usuário (persistente)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        block_id = request.data.get('block_id')
+        if not block_id:
+            return Response({'detail': 'block_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile = getattr(user, 'profile', None)
+        if profile is None:
+            return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Handle JSONField or TextField storage
+        try:
+            current = profile.blocos_completos or []
+            if isinstance(current, str):
+                import json
+                current = json.loads(current)
+        except Exception:
+            current = []
+
+        if block_id not in current:
+            current.append(block_id)
+            try:
+                profile.blocos_completos = current
+                profile.save()
+            except Exception:
+                # Try serializing to string if needed
+                import json
+                profile.blocos_completos = json.dumps(current)
+                profile.save()
+
+        return Response({'blocos_completos': current}, status=status.HTTP_200_OK)
