@@ -25,3 +25,5 @@ vine==5.1.0
 wcwidth==0.2.14
 python-dotenv
 django-storage-supabase
+google-generativeai==0.5.4
+google-api-python-client==2.134.0

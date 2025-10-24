@@ -60,6 +60,8 @@ const Profile = () => {
     joinDate: '...'
   });
 
+  
+
   useEffect(() => {
     const fetchUserData = async () => {
       setIsUserInfoLoading(true);
@@ -158,17 +160,21 @@ const Profile = () => {
             </Badge>
 
             <div className="flex gap-2 mt-4 w-full">
-              <Button variant="outline" className="w-full" onClick={() => navigate('/edit-profile')}> 
-                <LucideIcons.Edit className="h-4 w-4 mr-2" /> Editar Perfil
-              </Button>
-              <Button variant="outline" className="w-full" onClick={handleShare}>
-                <LucideIcons.Share2 className="h-4 w-4 mr-2" /> Compartilhar
-              </Button>
+                <Button variant="outline" className="w-full" onClick={() => navigate('/edit-profile')}> 
+                  <LucideIcons.Edit className="h-4 w-4 mr-2" /> Editar Perfil
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleShare}>
+                  <LucideIcons.Share2 className="h-4 w-4 mr-2" /> Compartilhar
+                </Button>
             </div>
+
+            
           </GameCard>
 
           <div>
             <h2 className="text-2xl font-bold mb-6 text-white">Conquistas</h2>
+
+          
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allAchievements && allAchievements.map((achievement) => {
                 const isEarned = unlockedAchievements?.includes(achievement.id);

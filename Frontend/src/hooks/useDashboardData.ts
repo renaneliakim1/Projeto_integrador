@@ -25,13 +25,6 @@ export interface UserData {
 
 export interface DashboardData {
   userData: UserData | null;
-  gamification: {
-    level: number;
-    xp: number;
-    streak: number;
-    dailyQuests: Quest[];
-    blocosCompletos: string[];
-  } | null;
   performanceData: AreaPerformance[] | null;
   activities: Activity[] | null;
 }
@@ -40,7 +33,6 @@ export const useDashboardData = () => {
     const { isAuthenticated } = useAuth();
     const [data, setData] = useState<DashboardData>({
         userData: null,
-        gamification: null,
         performanceData: null,
         activities: null,
     });
@@ -63,19 +55,28 @@ export const useDashboardData = () => {
 
             const userData = userResponse.data;
             const activityData = activityResponse.data;
+            // Normalize possible string fields (server may return JSON as string fallback)
+            const profile = userData.profile || {};
+            try {
+                if (profile.blocos_completos && typeof profile.blocos_completos === 'string') {
+                    profile.blocos_completos = JSON.parse(profile.blocos_completos);
+                }
+            } catch (e) {
+                profile.blocos_completos = [];
+            }
+            try {
+                if (profile.study_plan && typeof profile.study_plan === 'string') {
+                    profile.study_plan = JSON.parse(profile.study_plan);
+                }
+            } catch (e) {
+                profile.study_plan = null;
+            }
 
             setData({
                 userData: {
                     first_name: userData.first_name,
-                    profile: userData.profile,
+                    profile,
                 },
-                gamification: userData.profile?.gamification ? {
-                    level: userData.profile.gamification.level,
-                    xp: userData.profile.gamification.xp,
-                    streak: userData.profile.gamification.streak,
-                    dailyQuests: userData.profile.daily_quests || [],
-                    blocosCompletos: userData.profile.blocos_completos || [],
-                } : { level: 1, xp: 0, streak: 0, dailyQuests: [], blocosCompletos: [] },
                 performanceData: userData.performance || [],
                 activities: activityData || [],
             });
@@ -90,6 +91,16 @@ export const useDashboardData = () => {
 
     useEffect(() => {
         fetchData();
+    }, [fetchData]);
+
+    // Listen for app-level updates (dispatched by hooks like useGamification)
+    useEffect(() => {
+        const handler = () => {
+            // re-fetch data when other parts of the app notify of updates
+            fetchData();
+        };
+        window.addEventListener('app:data:updated', handler as EventListener);
+        return () => window.removeEventListener('app:data:updated', handler as EventListener);
     }, [fetchData]);
 
     return { ...data, isLoading, error, refetchData: fetchData };

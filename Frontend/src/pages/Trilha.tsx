@@ -7,6 +7,8 @@ import { Flame, BrainCircuit, Lock, Check, Heart, Gift, ArrowLeft } from 'lucide
 import { useGamification } from '@/hooks/useGamification';
 import { useToast } from '@/hooks/use-toast';
 import { useTimeTracker } from '@/hooks/useTimeTracker';
+import apiClient from '@/api/axios';
+import LoadingAnimation from '@/components/ui/LoadingAnimation';
 import { motion, useScroll, useSpring } from "framer-motion";
 
 const Trilha = () => {
@@ -15,12 +17,48 @@ const Trilha = () => {
   const { toast } = useToast();
   useTimeTracker();
 
+    const [checkingPlan, setCheckingPlan] = useState(true);
+
   const [recompensasColetadas, setRecompensasColetadas] = useState<number[]>(() => {
       const saved = localStorage.getItem('recompensasColetadas');
       return saved ? JSON.parse(saved) : [];
   });
 
   const todosOsBlocos = useMemo(() => trilhaPrincipal.flatMap(n => n.blocos), []);
+    const { scrollYProgress } = useScroll();
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
+
+    // Guard: only allow access to Trilha if user has a study plan saved
+        useEffect(() => {
+        (async () => {
+            try {
+                const resp = await apiClient.get('/users/me/');
+                let plan = resp.data?.profile?.study_plan;
+                if (typeof plan === 'string') {
+                    try { plan = JSON.parse(plan); } catch (e) { plan = null; }
+                }
+                const hasPlan = plan && Object.keys(plan).length > 0;
+                        if (!hasPlan) {
+                            toast({ title: 'Plano não encontrado', description: 'Você precisa gerar um plano de estudo antes de acessar a Trilha.' });
+                    navigate('/study-plan');
+                } else {
+                    setCheckingPlan(false);
+                }
+            } catch (e) {
+                // If the request fails, allow access (optimistic) or optionally redirect; we'll allow but stop checking
+                console.warn('Could not verify study plan on server, allowing access by fallback.', e);
+                setCheckingPlan(false);
+            }
+        })();
+    }, [navigate, toast]);
+
+            if (checkingPlan) {
+                return <LoadingAnimation text="Verificando plano de estudo..." subtext="Aguarde" />;
+            }
 
   const handleBlockClick = (nivel: number, blocoId: string) => {
     navigate(`/lesson/${blocoId}`);
@@ -35,12 +73,6 @@ const Trilha = () => {
     toast({ title: "Reward Collected!", description: "You earned 100 extra XP!", className: 'bg-gradient-warning text-white border-none' });
   };
 
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
 
   return (
     <div className="bg-gradient-to-b from-gray-900 to-background text-white min-h-screen overflow-x-hidden">

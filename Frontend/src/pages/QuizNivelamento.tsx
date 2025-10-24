@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Star, Target, Award, TrendingUp, TrendingDown, SkipForward, BookOpenCheck } from 'lucide-react';
 import { useGamification } from "@/hooks/useGamification";
+import apiClient from '@/api/axios';
 import { usePerformance } from "@/hooks/usePerformance";
 import { Separator } from "@/components/ui/separator";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -119,15 +120,10 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
   }
 }
 
-type StudyPlanTopic = {
+type StudyPlanAction = {
   title: string;
   description: string;
-};
-
-type StudyPlanAction = {
-  area: string;
-  emoji: string;
-  topics: StudyPlanTopic[];
+  priority: string;
 };
 
 type StudyPlan = {
@@ -146,90 +142,6 @@ type StudyPlan = {
   motivation: string;
 };
 
-async function gerarPlanoDeEstudo(
-  analise: Record<string, { acertos: number; erros: number; pulos: number } >,
-  escolaridade: string,
-  foco: string,
-  idade: number,
-  maxStreak: number,
-  maxErrorStreak: number
-): Promise<StudyPlan | null> {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
-    const desempenho = Object.entries(analise).map(([area, dados]) => 
-      `- **${area}**: Acertou ${dados.acertos} de ${dados.acertos + dados.erros + dados.pulos} (pulou ${dados.pulos}).`
-    ).join('\n');
-
-    const prompt = `
-      Você é um tutor de IA amigável e especialista em educação chamado Skillio.
-      Um aluno de ${idade} anos, do nível "${escolaridade}", com foco principal em "${foco}", acabou de completar um quiz.
-
-      # Análise de Desempenho do Aluno
-      ${desempenho}
-      - Sequência máxima de acertos: ${maxStreak}
-      - Sequência máxima de erros/pulos: ${maxErrorStreak}
-
-      # Sua Tarefa
-      Com base na análise, gere um plano de estudo personalizado e motivador.
-      A resposta DEVE ser um objeto JSON, sem nenhum texto ou markdown adicional.
-      Siga ESTRITAMENTE a estrutura JSON abaixo:
-
-      {
-        "title": "string", // Título chamativo e inspirador. Ex: "Sua Jornada do Conhecimento Começa Agora! 🚀"
-        "greeting": "string", // Saudação calorosa, elogiando o esforço do aluno.
-        "analysis": {
-          "summary": "string", // Um resumo conciso e encorajador do desempenho geral.
-          "focusPoints": ["string", "string"], // Array com as 2 áreas prioritárias (mais erros/pulos). A área de foco "${foco}" deve ser priorizada se estiver entre as piores.
-          "strength": "string" // A área com o melhor desempenho. Ex: "Seu Ponto Forte: [Matéria]"
-        },
-        "actionPlan": [
-          {
-            "area": "string", // Nome da primeira área prioritária.
-            "emoji": "string", // Um emoji que represente a área.
-            "topics": [
-              { "title": "string", "description": "string" }, // Tópico 1: Título específico e breve descrição (1 linha) da sua importância.
-              { "title": "string", "description": "string" }  // Tópico 2: Título específico e breve descrição (1 linha) da sua importância.
-            ]
-          },
-          {
-            "area": "string", // Nome da segunda área prioritária.
-            "emoji": "string", // Um emoji que represente a área.
-            "topics": [
-              { "title": "string", "description": "string" }, // Tópico 1.
-              { "title": "string", "description": "string" }  // Tópico 2.
-            ]
-          }
-        ],
-        "nextChallenge": {
-          "title": "string", // Título para a seção. Ex: "🎯 Seu Próximo Desafio".
-          "suggestion": "string" // Sugestão prática e encorajadora, indicando por onde começar.
-        },
-        "motivation": "string" // Mensagem final curta, inspiradora e motivacional. Ex: "Lembre-se: cada passo é um progresso!"
-      }
-    `;
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    
-    try {
-      const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/);
-      if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
-      }
-      return JSON.parse(text);
-    } catch (e) {
-      console.error("Erro ao fazer parse do JSON do plano de estudo:", e);
-      console.error("Resposta recebida:", text);
-      return null;
-    }
-
-  } catch (e) {
-    console.error("Erro ao gerar plano de estudo com a IA:", e);
-    return null;
-  }
-}
-
 const QuizNivelamento = () => {
   const [indice, setIndice] = useState(0);
   const [respostas, setRespostas] = useState<(number | null)[]>([]); // null para pulado
@@ -237,8 +149,8 @@ const QuizNivelamento = () => {
   const [perguntasNivelamento, setPerguntasNivelamento] = useState<PerguntaQuiz[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [planoDeEstudo, setPlanoDeEstudo] = useState<StudyPlan | null>(null);
-  const [gerandoPlano, setGerandoPlano] = useState(false);
+  const [quizResults, setQuizResults] = useState({ acertos: 0, total: 0, xpGanhos: 0 });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
@@ -365,57 +277,60 @@ const QuizNivelamento = () => {
 
   useEffect(() => {
     if (finalizado) {
-      const analise = calcularPlanoEstudo();
-      const { acertos, total } = Object.values(analise).reduce(
-        (acc, area) => {
-          acc.acertos += area.acertos;
-          acc.total += area.acertos + area.erros + area.pulos;
-          return acc;
-        },
-        { acertos: 0, total: 0 }
-      );
-
-      const dadosParaGrafico = Object.entries(analise).map(([name, value]) => ({
-        name,
-        acertos: value.acertos,
-        erros: value.erros + value.pulos,
-      }));
-      setDadosGrafico(dadosParaGrafico);
-
-      const performanceResults = Object.entries(analise).map(([subject, data]) => ({
-        subject,
-        correct: data.acertos,
-        incorrect: data.erros + data.pulos,
-      }));
-      updatePerformance(performanceResults);
-
-      const xpGanhos = acertos * 10;
-      addXp(xpGanhos);
-      resetHearts();
-
       (async () => {
-        setGerandoPlano(true);
-        const escolaridade = getEscolaridade();
-  const foco = userFocus || 'Conhecimentos Gerais';
-        const idade = getUserAge();
-        const planoResponse = await gerarPlanoDeEstudo(analise, escolaridade, foco, idade, maxStreak, maxErrorStreak);
+        setIsSubmitting(true);
+        try {
+          const analise = calcularPlanoEstudo();
+          const { acertos, total } = Object.values(analise).reduce(
+            (acc, area) => {
+              acc.acertos += area.acertos;
+              acc.total += area.acertos + area.erros + area.pulos;
+              return acc;
+            },
+            { acertos: 0, total: 0 }
+          );
+          const xpGanhos = acertos * 10;
+          setQuizResults({ acertos, total, xpGanhos });
 
-        if (planoResponse) {
-          setPlanoDeEstudo(planoResponse);
-          localStorage.setItem('studyPlan', JSON.stringify(planoResponse));
-          sessionStorage.setItem('justFinishedQuiz', 'true');
-          
-          const priorityAreas = planoResponse.analysis.focusPoints;
-          if (priorityAreas && priorityAreas.length > 0) {
-            localStorage.setItem('userPreferredSubject', priorityAreas[0]);
-          } else {
-            localStorage.setItem('userPreferredSubject', foco);
+          const dadosParaGrafico = Object.entries(analise).map(([name, value]) => ({
+            name,
+            acertos: value.acertos,
+            erros: value.erros + value.pulos,
+          }));
+          setDadosGrafico(dadosParaGrafico);
+
+          const performanceResults = Object.entries(analise).map(([subject, data]) => ({
+            subject,
+            correct: data.acertos,
+            incorrect: data.erros + data.pulos,
+          }));
+
+          // Persist performance and gamification data
+          try {
+            await Promise.all([
+              updatePerformance(performanceResults),
+              addXp(xpGanhos),
+              resetHearts(),
+            ]);
+            sessionStorage.setItem('justFinishedQuiz', 'true');
+          } catch (e) {
+            console.warn('Failed to persist quiz data', e);
+            toast({ title: "Erro", description: "Houve um problema ao salvar seu progresso. Seus resultados podem não ter sido registrados." });
           }
-        } else {
-          toast({ title: "Erro", description: "Não foi possível gerar seu plano de estudo. Tente novamente." });
-        }
 
-        setGerandoPlano(false);
+          // Fire-and-forget request to generate study plan
+          apiClient.post('/users/me/generate-study-plan/', {
+            analise,
+            maxStreak,
+            maxErrorStreak,
+          }).catch(e => {
+            console.error('Failed to trigger study plan generation', e);
+            // Optionally, inform the user that the plan generation might fail
+          });
+
+        } finally {
+          setIsSubmitting(false);
+        }
       })();
     }
   }, [finalizado, calcularPlanoEstudo, toast, maxStreak, maxErrorStreak, updatePerformance, addXp, resetHearts, userFocus]);
@@ -514,74 +429,12 @@ const QuizNivelamento = () => {
                 <CardTitle className="flex items-center gap-2">🚀 Seu Plano de Estudo Personalizado</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow p-6 space-y-6">
-                {gerandoPlano ? (
-                  <div className="flex items-center justify-center h-full">
-                    <LoadingAnimation 
-                      text="Criando seu plano de estudo com IA..."
-                      subtext="Isso pode levar alguns segundos."
-                    />
-                  </div>
-                ) : planoDeEstudo ? (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <h3 className="text-xl font-bold text-primary">{planoDeEstudo.title}</h3>
-                      <p className="text-muted-foreground">{planoDeEstudo.greeting}</p>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h4 className="font-semibold text-lg mb-2">🔍 Raio-X do Conhecimento</h4>
-                      <p className="text-sm text-muted-foreground mb-4">{planoDeEstudo.analysis.summary}</p>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <Card className="p-3 bg-background/50">
-                          <p className="font-semibold">Pontos de Foco</p>
-                          <p className="text-muted-foreground">{planoDeEstudo.analysis.focusPoints.join(', ')}</p>
-                        </Card>
-                        <Card className="p-3 bg-background/50">
-                          <p className="font-semibold">Ponto Forte</p>
-                          <p className="text-muted-foreground">{planoDeEstudo.analysis.strength}</p>
-                        </Card>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-lg mb-3">🔥 Plano de Ação</h4>
-                      <div className="space-y-4">
-                        {planoDeEstudo.actionPlan.map((action, index) => (
-                          <Card key={index} className="bg-background/50">
-                            <CardHeader className="p-4">
-                              <CardTitle className="flex items-center gap-2 text-base"> 
-                                <span className="text-xl">{action.emoji}</span> {action.area}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0 space-y-3">
-                              {action.topics.map((topic, i) => (
-                                <div key={i} className="flex items-start gap-3">
-                                  <BookOpenCheck className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-                                  <div>
-                                    <p className="font-semibold">{topic.title}</p>
-                                    <p className="text-xs text-muted-foreground">{topic.description}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="text-center">
-                      <h4 className="font-semibold">{planoDeEstudo.nextChallenge.title}</h4>
-                      <p className="text-sm text-muted-foreground">{planoDeEstudo.nextChallenge.suggestion}</p>
-                      <p className="font-bold text-primary mt-2">{planoDeEstudo.motivation}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">Não foi possível carregar o plano de estudo.</div>
-                )}
+                <div className="flex items-center justify-center h-full">
+                  <LoadingAnimation 
+                    text="Estamos criando seu plano de estudo com IA..."
+                    subtext="Você pode avançar e o encontrará no seu dashboard em breve!"
+                  />
+                </div>
               </CardContent>
             </Card>
 

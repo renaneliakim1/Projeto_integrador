@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, User, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedDatePicker } from "@/components/ui/AnimatedDatePicker";
 import { Separator } from "@/components/ui/separator";
@@ -51,6 +51,36 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logout } = useAuth();
+
+  // Delete account modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast({ title: 'Senha necessária', description: 'Digite sua senha para confirmar a exclusão.', variant: 'destructive' });
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+  await apiClient.post('/users/me/delete-account/', { password: deletePassword });
+      toast({ title: 'Conta apagada', description: 'Sua conta e dados foram removidos.', variant: 'default' });
+      logout();
+      navigate('/');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = err as any;
+      console.error('Erro ao apagar conta', e);
+      const message = e?.response?.data?.detail || 'Falha ao apagar conta. Verifique sua senha.';
+      toast({ title: 'Erro', description: message, variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setDeletePassword('');
+    }
+  };
 
   const opcoesFoco = ["ENEM", "Lógica", "Direito", "Português", "Matemática", "Programação", "História"];
 
@@ -367,9 +397,68 @@ const EditProfile = () => {
             <Button type="submit" className="w-full bg-gradient-growth">Salvar Alterações</Button>
           </form>
         </Card>
-        <div className="text-center mt-6">
-          <Link to="/perfil" className="text-sm text-muted-foreground hover:text-primary transition-colors">← Voltar para o Perfil</Link>
+        <div className="mt-6 space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 bg-red-600 text-white hover:bg-red-700 focus:outline-none"
+          >
+            <Trash2 className="h-4 w-4" /> Apagar conta
+          </button>
+
+          <div className="text-center">
+            <Link to="/perfil" className="text-sm text-muted-foreground hover:text-primary transition-colors">← Voltar para o Perfil</Link>
+          </div>
         </div>
+
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+              <Card className="sm:max-w-[425px] w-full mx-auto bg-card/80 backdrop-blur-sm p-6 sm:p-8 shadow-elevated border-border/50 overflow-hidden">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 bg-red-50 text-red-600 rounded-full p-3">
+                      <Trash2 className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground">Apagar conta</h3>
+                      <p className="text-sm text-muted-foreground mt-1">Digite sua senha para confirmar a exclusão permanente da sua conta.</p>
+                      <p className="text-sm font-semibold text-red-600 mt-2">Essa ação é irreversível.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="delete-password" className="block text-sm font-medium text-foreground mb-2">Senha</Label>
+                    <Input
+                      id="delete-password"
+                      type="password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder="Digite sua senha"
+                      className="bg-background/50 border-border/50"
+                    />
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <Button
+                      variant="secondary"
+                      onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting || !deletePassword}
+                      className="inline-flex items-center"
+                    >
+                      {isDeleting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                      Apagar conta
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+          </div>
+        )}
       </div>
     </div>
   );

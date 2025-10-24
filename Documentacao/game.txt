@@ -7,11 +7,12 @@ Aqui estão várias ideias de como podemos gamificar o Skillio para todos os usu
 Esta é a base de tudo. Cada atividade na plataforma, seja de Matemática, Direito ou Programação, recompensa o usuário com Pontos de Experiência (XP).
 
 Como funciona:
-Completar um quiz: +50 XP
-Acertar uma pergunta difícil: +10 XP
+Ao fazer o quiz dee nivelamento, cada pergunta certa vale +10 pontos
+Acertar uma pergunta: +10 XP
 Manter uma sequência de logins diários (streak): +20 XP
 Conquistar uma medalha: +100 XP
-Por que funciona: Ao acumular XP, o usuário "sobe de nível" (Nível 1 → Nível 2, etc.). O nível se torna um símbolo universal de dedicação e pode ser exibido no perfil, gerando orgulho e um desejo de continuar progredindo, independentemente da matéria estudada.
+Por que funciona:Ao concluir os 15 blocos de perguntas, o usuário "sobe de nível" (Nível 1 → Nível 2, etc.). O nível se torna um símbolo universal de dedicação e pode ser exibido no perfil, gerando orgulho e um desejo de continuar progredindo, independentemente da matéria estudada.
+
 2. Rankings e Competição Saudável
 Rankings são extremamente eficazes. Para atender aos diferentes focos, podemos ter vários tipos:
 
@@ -30,24 +31,6 @@ Conquistas Específicas do Foco:
 Matemática: "Pitagórico" - por dominar o módulo de Teorema de Pitágoras.
 Programação: "Mestre da Lógica" - por completar um desafio de lógica sem erros.
 História: "Explorador do Tempo" - por desbloquear todos os períodos da história antiga.
-4. Moeda Virtual e Loja de Itens
-Recompensar os usuários com uma moeda virtual (ex: "Skill Coins") por completarem tarefas. Com essa moeda, eles podem "comprar" itens na loja.
-
-O que vender:
-Itens Cosméticos: Molduras para a foto de perfil, temas de cores para a interface, mascotes diferentes. Isso não afeta o aprendizado, mas aumenta o engajamento.
-Itens de Utilidade (com cuidado): "Dicas" para perguntas difíceis ou uma "Segunda Chance" em um quiz. Devem ser caros ou limitados para não facilitar demais o aprendizado.
-Por que funciona: Dá ao usuário autonomia e uma recompensa tangível pelo seu esforço, incentivando-o a continuar aprendendo para ganhar mais moedas.
-5. Missões Diárias e Sequências (Streaks)
-Sequências (Streaks): Incentive o hábito de estudar diariamente. Se o usuário entra na plataforma por 3, 5, 7 dias seguidos, ele ganha um bônus cada vez maior de XP ou moedas. Perder a sequência cria um incentivo para voltar.
-Missões Diárias/Semanais: Pequenos objetivos que direcionam o usuário.
-"Missão Diária: Responda 5 perguntas de Português."
-"Missão Semanal: Ganhe 1000 XP em qualquer matéria."
-Conclusão
-A chave é criar um sistema de recompensas universal (XP, níveis, moedas, conquistas gerais) e, ao mesmo tempo, permitir que os usuários se aprofundem e compitam dentro de seus próprios focos de interesse (rankings e conquistas por matéria). Dessa forma, todos sentem que estão progredindo em um "jogo" maior, enquanto aprimoram as habilidades que mais lhes interessam.
-
-
-
-
 
 
 O sistema de gamificação do projeto foi projetado para motivar os usuários através de mecânicas de jogo focadas no aprendizado. Ele funciona da seguinte forma:
@@ -59,7 +42,7 @@ Acumular XP faz o usuário subir de Nível. A quantidade de XP necessária para 
 Seu nível, XP atual e progresso para o próximo nível são exibidos no Dashboard.
 Quizzes e Atividades:
 
-Completar quizzes é uma forma principal de ganhar XP (100 XP por quiz).
+Completar quizzes é uma forma principal de ganhar XP (150 XP por quiz).
 O número de quizzes concluídos é registrado e pode ser um critério para desbloquear conquistas.
 Sequência (Streak) de Acesso:
 
@@ -67,14 +50,12 @@ O sistema recompensa o acesso diário consecutivo. Manter a sequência ativa ger
 A sequência é resetada se o usuário não acessar a plataforma por um dia.
 Conquistas (Achievements):
 
-São objetivos específicos que os usuários desbloqueiam ao atingir marcos (ex: completar o primeiro quiz, alcançar um nível específico, acumular certa quantidade de XP).
-Cada conquista tem um nome, descrição, ícone e critérios de desbloqueio definidos em Frontend/src/data/achievements.ts.
-Ao desbloquear uma conquista, uma notificação "toast" é exibida.
-Missões Diárias (Daily Quests):
+
 
 Os usuários recebem missões diárias que se renovam a cada dia.
 Completar uma missão diária concede 50 XP.
-As missões são listadas no Dashboard, onde o usuário pode acompanhar seu progresso e marcá-las como concluídas.
+As missões são listadas no Dashboard, onde o usuário pode acompanhar seu progresso.
+
 Como o sistema funciona tecnicamente:
 
 useGamification.ts (Hook Principal): Este hook React é o centro da gamificação. Ele gerencia o estado do usuário (XP, nível, quizzes, sequência, conquistas e missões diárias) e persiste esses dados no localStorage do navegador. Ele contém a lógica para:

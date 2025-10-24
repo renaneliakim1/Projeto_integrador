@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import apiClient from '@/api/axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,65 +40,80 @@ type StudyPlan = {
 };
 
 // Componente para renderizar o plano de estudo
-const StudyPlanDisplay = ({ plan }: { plan: StudyPlan }) => (
-  <div className="space-y-6">
-    <div className="text-center">
-      <h3 className="text-2xl font-bold text-primary">{plan.title}</h3>
-      <p className="text-muted-foreground">{plan.greeting}</p>
-    </div>
-
-    <Separator />
-
-    <div>
-      <h4 className="font-semibold text-xl mb-3">🔍 Raio-X do Conhecimento</h4>
-      <p className="text-sm text-muted-foreground mb-4">{plan.analysis.summary}</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <Card className="p-4 bg-background/50">
-          <p className="font-bold">Pontos de Foco</p>
-          <p className="text-muted-foreground">{plan.analysis.focusPoints.join(', ')}</p>
-        </Card>
-        <Card className="p-4 bg-background/50">
-          <p className="font-bold">Ponto Forte</p>
-          <p className="text-muted-foreground">{plan.analysis.strength}</p>
-        </Card>
+const StudyPlanDisplay = ({ plan }: { plan: StudyPlan | null }) => {
+  // Defensive: se plan ou partes essenciais estiverem ausentes, não quebre a UI
+  if (!plan || !plan.analysis) {
+    return (
+      <div className="p-6 text-center">
+        <h3 className="text-2xl font-bold text-primary">Plano de estudo indisponível</h3>
+        <p className="text-muted-foreground mt-2">Ainda não há um plano de estudo gerado para este usuário.</p>
       </div>
-    </div>
+    );
+  }
 
-    <div>
-      <h4 className="font-semibold text-xl mb-4">🔥 Plano de Ação</h4>
-      <div className="space-y-4">
-        {plan.actionPlan.map((action, index) => (
-          <Card key={index} className="bg-background/50 overflow-hidden">
-            <CardHeader className="p-4 bg-muted/50">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <span className="text-2xl">{action.emoji}</span> {action.area}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              {action.topics.map((topic, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <BookOpenCheck className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold">{topic.title}</p>
-                    <p className="text-sm text-muted-foreground">{topic.description}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
+  const actionPlan: StudyPlanAction[] = Array.isArray(plan.actionPlan) ? plan.actionPlan : [];
+  const focusPoints: string[] = Array.isArray(plan.analysis?.focusPoints) ? plan.analysis.focusPoints : [];
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-primary">{plan.title || 'Seu Plano de Estudo'}</h3>
+        <p className="text-muted-foreground">{plan.greeting || ''}</p>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h4 className="font-semibold text-xl mb-3">🔍 Raio-X do Conhecimento</h4>
+        <p className="text-sm text-muted-foreground mb-4">{plan.analysis.summary || ''}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <Card className="p-4 bg-background/50">
+            <p className="font-bold">Pontos de Foco</p>
+            <p className="text-muted-foreground">{focusPoints.join(', ')}</p>
           </Card>
-        ))}
+          <Card className="p-4 bg-background/50">
+            <p className="font-bold">Ponto Forte</p>
+            <p className="text-muted-foreground">{plan.analysis.strength || ''}</p>
+          </Card>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-semibold text-xl mb-4">🔥 Plano de Ação</h4>
+        <div className="space-y-4">
+          {actionPlan.map((action: StudyPlanAction, index: number) => (
+            <Card key={index} className="bg-background/50 overflow-hidden">
+              <CardHeader className="p-4 bg-muted/50">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <span className="text-2xl">{action.emoji}</span> {action.area}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                {(action.topics || []).map((topic: StudyPlanTopic, i: number) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <BookOpenCheck className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">{topic.title}</p>
+                      <p className="text-sm text-muted-foreground">{topic.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="text-center">
+        <h4 className="font-semibold text-lg">{plan.nextChallenge?.title || ''}</h4>
+        <p className="text-muted-foreground">{plan.nextChallenge?.suggestion || ''}</p>
+        <p className="font-bold text-primary mt-2">{plan.motivation || ''}</p>
       </div>
     </div>
-
-    <Separator />
-
-    <div className="text-center">
-      <h4 className="font-semibold text-lg">{plan.nextChallenge.title}</h4>
-      <p className="text-muted-foreground">{plan.nextChallenge.suggestion}</p>
-      <p className="font-bold text-primary mt-2">{plan.motivation}</p>
-    </div>
-  </div>
-);
+  );
+};
 
 const StudyPlan = () => {
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
@@ -107,34 +123,67 @@ const StudyPlan = () => {
   const { level, blocosCompletos } = useGamification();
 
   useEffect(() => {
-    try {
-      const savedPlanString = localStorage.getItem('studyPlan');
-      if (savedPlanString) {
-        const savedPlan = JSON.parse(savedPlanString);
-        setStudyPlan(savedPlan);
+    (async () => {
+      try {
+        // Try loading from server first
+        const resp = await apiClient.get('/users/me/');
+        let serverPlan = resp.data?.profile?.study_plan;
+        if (typeof serverPlan === 'string') {
+          try {
+            serverPlan = JSON.parse(serverPlan);
+          } catch (e) {
+            serverPlan = null;
+          }
+        }
+        if (serverPlan && Object.keys(serverPlan).length > 0) {
+          setStudyPlan(serverPlan);
+          setCarregando(false);
+          return;
+        } else {
+          // if serverPlan exists but is empty object, treat as no plan
+          setStudyPlan(null);
+        }
+      } catch (e) {
+        // ignore and fallback to localStorage
+        console.warn('Could not fetch study plan from server, falling back to localStorage', e);
       }
-    } catch (error) {
-      console.error("Falha ao carregar o plano de estudo do localStorage:", error);
-      setStudyPlan(null); // Garante que o estado é nulo se houver erro
-    } finally {
-      setCarregando(false);
-    }
 
-    const nivelAtualData = trilhaPrincipal.find(n => n.nivel === level);
-    if (nivelAtualData) {
-      const todosBlocosCompletos = nivelAtualData.blocos.every(bloco => blocosCompletos.includes(bloco.id));
-      setIsRefazerAtivo(todosBlocosCompletos);
-    } else {
-      setIsRefazerAtivo(false);
-    }
+      try {
+        const savedPlanString = localStorage.getItem('studyPlan');
+        if (savedPlanString) {
+          const savedPlan = JSON.parse(savedPlanString);
+          setStudyPlan(savedPlan);
+        }
+      } catch (error) {
+        console.error("Falha ao carregar o plano de estudo do localStorage:", error);
+        setStudyPlan(null); // Garante que o estado é nulo se houver erro
+      } finally {
+        setCarregando(false);
+      }
+    })();
+
+    // Leave isRefazerAtivo decision to separate effect that depends on studyPlan
   }, [level, blocosCompletos]);
+
+  // Decide if "Refazer Nivelamento" should be active:
+  // - Active if user has NO study plan (encorajar criar um)
+  // - OR if the current level's blocks are all complete
+  useEffect(() => {
+    const nivelAtualData = trilhaPrincipal.find(n => n.nivel === level);
+    const todosBlocosCompletos = nivelAtualData ? nivelAtualData.blocos.every(bloco => blocosCompletos.includes(bloco.id)) : false;
+    if (!studyPlan) {
+      setIsRefazerAtivo(true);
+    } else {
+      setIsRefazerAtivo(todosBlocosCompletos);
+    }
+  }, [studyPlan, level, blocosCompletos]);
 
   const handleNavigateToQuiz = () => {
     navigate('/quiz-nivelamento');
   };
 
   if (carregando) {
-    return <LoadingAnimation text="Carregando seu plano de estudo..." />;
+    return <LoadingAnimation text="Carregando seu plano de estudo..." subtext="Aguarde enquanto buscamos seus dados." />;
   }
 
   return (

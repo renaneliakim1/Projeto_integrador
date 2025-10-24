@@ -14,6 +14,10 @@ import { ptBR } from 'date-fns/locale';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useGamification } from "@/hooks/useGamification";
+import { trilhaPrincipal } from '@/data/trilhaPrincipal';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, RadialLinearScale);
 
@@ -83,8 +87,8 @@ function CustomDayContent(props: DayContentProps) {
 
 // Função auxiliar para calcular o desempenho
 const calculatePerformance = (subjects: any[]) => {
-  const totalAcertos = subjects.reduce((sum, item) => sum + item.correct_answers, 0);
-  const totalErros = subjects.reduce((sum, item) => sum + item.incorrect_answers, 0);
+  const totalAcertos = subjects.reduce((sum: number, item: any) => sum + (item.correct_answers || 0), 0);
+  const totalErros = subjects.reduce((sum: number, item: any) => sum + (item.incorrect_answers || 0), 0);
   const total = totalAcertos + totalErros;
   return total > 0 ? Math.round((totalAcertos / total) * 100) : 0;
 };
@@ -95,17 +99,28 @@ const Dashboard = () => {
   const { isAuthenticated } = useAuth();
   const [chartType, setChartType] = useState('bar');
   const [currentView, setCurrentView] = useState('Visão Geral');
-  const chartRef = useRef<ChartJS>(null);
+  const chartRef = useRef<any>(null);
 
-  const { userData, gamification, performanceData, activities: apiActivities, isLoading, refetchData, error } = useDashboardData();
+  const { userData, performanceData, activities: apiActivities, isLoading, refetchData, error } = useDashboardData();
+  const { level, xp, streak, dailyQuests, blocosCompletos } = useGamification();
+
+  // determine if user has a study plan
+  const studyPlan = (userData?.profile as any)?.study_plan ?? null;
 
   // Lógica para o botão de Nivelamento/Plano de Estudo
-  const initialQuizDone = useMemo(() => performanceData && performanceData.length > 0, [performanceData]);
+  // initialQuizDone: true if user already has a study plan or has performance data
+  const initialQuizDone = useMemo(() => Boolean(studyPlan) || (performanceData && performanceData.length > 0), [studyPlan, performanceData]);
   const blockCountOnQuizStart = parseInt(localStorage.getItem('blockCountOnQuizStart') || '0', 10);
+  // canRetakeQuiz: only allow retake if user has completed at least one full level
+  const hasCompletedAnyLevel = useMemo(() => {
+    if (!blocosCompletos) return false;
+    return trilhaPrincipal.some(nivel => nivel.blocos.every(b => blocosCompletos.includes(b.id)));
+  }, [blocosCompletos]);
   const canRetakeQuiz = useMemo(() => {
-    if (!gamification?.blocosCompletos) return false;
-    return gamification.blocosCompletos.length > blockCountOnQuizStart;
-  }, [gamification?.blocosCompletos, blockCountOnQuizStart]);
+    if (!blocosCompletos) return false;
+    // require that user completed a level and progressed beyond the block count recorded at quiz start
+    return hasCompletedAnyLevel && blocosCompletos.length > blockCountOnQuizStart;
+  }, [blocosCompletos, blockCountOnQuizStart, hasCompletedAnyLevel]);
 
   const activities = useMemo(() => {
     if (!apiActivities) return [];
@@ -129,7 +144,6 @@ const Dashboard = () => {
   useEffect(() => {
     const justFinishedQuiz = sessionStorage.getItem('justFinishedQuiz') === 'true';
     if (justFinishedQuiz) {
-      refetchData?.();
       sessionStorage.removeItem('justFinishedQuiz');
     }
   }, [refetchData]);
@@ -199,15 +213,21 @@ const Dashboard = () => {
         label: '% de Erros',
         data: errorData,
         backgroundColor: '#ef4444',
+        borderColor: '#dc2626',
+        borderWidth: 1,
         barPercentage: 0.5,
         categoryPercentage: 0.5,
+        pointBackgroundColor: '#dc2626',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#dc2626',
       });
     }
 
     return { labels, datasets };
   }, [currentView, chartType, performanceData]);
 
-  const handleChartClick = (event: any) => {
+  const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (currentView !== 'Visão Geral' || !chartRef.current) return;
     const element = getElementAtEvent(chartRef.current, event);
     if (element.length > 0) {
@@ -230,8 +250,9 @@ const Dashboard = () => {
     );
   }
 
-  const practiceDays = activities.filter(a => a.type === 'pratica').map(a => a.date);
-  const failureDays = activities.filter(a => a.type === 'falha').map(a => a.date);
+  // Corrigir o calendário: marcar dias baseados em atividades reais
+  const practiceDays = activities.filter(a => a.type === 'pratica').map(a => new Date(a.date));
+  const failureDays = activities.filter(a => a.type === 'falha').map(a => new Date(a.date));
 
   return (
     <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -241,9 +262,9 @@ const Dashboard = () => {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Bem-vindo, {userName}!</h2>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm sm:text-base">
-              <span className="flex items-center text-muted-foreground"><Star className="w-4 h-4 mr-1 text-amber-400"/>Nível: <b className="ml-1 text-primary">{gamification?.level}</b></span>
-              <span className="flex items-center text-muted-foreground"><Trophy className="w-4 h-4 mr-1 text-amber-400"/>Pontos: <b className="ml-1 text-primary">{gamification?.xp} XP</b></span>
-              {gamification?.streak && gamification.streak > 0 && <span className="flex items-center text-muted-foreground"><Flame className="w-4 h-4 mr-1 text-orange-500"/>Sequência: <b className="ml-1 text-orange-500">{gamification.streak} dias</b></span>}
+              <span className="flex items-center text-muted-foreground"><Star className="w-4 h-4 mr-1 text-amber-400"/>Nível: <b className="ml-1 text-primary">{level}</b></span>
+              <span className="flex items-center text-muted-foreground"><Trophy className="w-4 h-4 mr-1 text-amber-400"/>Pontos: <b className="ml-1 text-primary">{xp} XP</b></span>
+              {streak && streak > 0 && <span className="flex items-center text-muted-foreground"><Flame className="w-4 h-4 mr-1 text-orange-500"/>Sequência: <b className="ml-1 text-orange-500">{streak} dias</b></span>}
             </div>
           </div>
         </div>
@@ -401,7 +422,7 @@ const Dashboard = () => {
                     <CardTitle>Missões Diárias</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {gamification?.dailyQuests && gamification.dailyQuests.map(quest => (
+                    {dailyQuests && dailyQuests.map(quest => (
                     <div key={quest.quest.id} className={`flex items-center gap-4 p-3 rounded-lg transition-all ${quest.is_completed ? 'bg-green-500/10' : 'bg-muted/50'}`}>
                         <Checkbox id={quest.quest.id} checked={quest.is_completed} disabled className="data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500" />
                         <label htmlFor={quest.quest.id} className={`flex-1 text-sm ${quest.is_completed ? 'line-through text-muted-foreground' : ''}`}>

@@ -84,7 +84,7 @@ const Game = () => {
     }
   }, [isTrailGame, hearts, blocoId, isBlockCompleted, navigate, toast]);
 
-  const handleAnswer = useCallback((answerIndex: number) => {
+  const handleAnswer = useCallback(async (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
     setShowResult(true);
     
@@ -100,11 +100,18 @@ const Game = () => {
       setPendingXp(prev => prev + 5);
       toast({ title: "Correto! 🎉" });
     } else {
-      // Para quizzes avulsos (não-trilha), damos XP imediatamente
-      addXp(5);
-      toast({ title: "Correto! 🎉", description: `+10 Pontos, +5 XP` });
+      // Para quizzes avulsos (não-trilha), damos XP imediatamente e aguardamos a persistência
+      try {
+        await addXp(5);
+        toast({ title: "Correto! 🎉", description: `+10 Pontos, +5 XP` });
+        // sinaliza que houve atualização persistida para que o Dashboard recupere os dados ao voltar
+        sessionStorage.setItem('justFinishedQuiz', 'true');
+      } catch (e) {
+        console.warn('addXp failed (inline question)', e);
+        toast({ title: "Correto! 🎉", description: `+10 Pontos (erro ao persistir XP)` });
+      }
     }
-  } else {
+    } else {
       setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
       if (isTrailGame) {
           if (answerIndex !== null && answerIndex !== -1) { // Apenas erros contam, não pulos ou tempo esgotado
@@ -121,6 +128,7 @@ const Game = () => {
       }
     }
 
+    // Avança para próxima pergunta depois de mostrar resultado. Mantemos UX responsivo com timeout.
     setTimeout(() => {
       if (currentQuestion + 1 < questions.length) {
         setCurrentQuestion(currentQuestion + 1);
@@ -150,30 +158,52 @@ const Game = () => {
   }, [mistakes, isTrailGame, toast]);
 
   useEffect(() => {
-    const handleGameOver = async () => {
+      const handleGameOver = async () => {
       if (!gameOver) return;
 
-      updatePerformance([{
-        subject: subject,
-        correct: sessionAnswers.correct,
-        incorrect: sessionAnswers.incorrect,
-      }]);
+      try {
+        await updatePerformance([{
+          subject: subject,
+          correct: sessionAnswers.correct,
+          incorrect: sessionAnswers.incorrect,
+        }]);
+      } catch (e) {
+        console.warn('updatePerformance failed', e);
+      }
 
       if (blocoId && isTrailGame) {
         if (mistakes < 5 && !isBlockCompleted(blocoId)) { // Player won
           // Ao concluir o bloco, persistimos o XP ganho durante o bloco no backend
+          let persistenceSucceeded = true;
           if (pendingXp > 0) {
             try {
               await addXp(pendingXp);
             } catch (e) {
               console.error('Failed to persist pending XP', e);
+              persistenceSucceeded = false;
+              toast({ title: "Erro ao salvar XP", description: "Não foi possível salvar a experiência no servidor.", variant: 'destructive' });
             }
           }
-          completeBlock(blocoId);
+          try {
+            await completeBlock(blocoId);
+          } catch (e) {
+            console.warn('completeBlock failed', e);
+            // We consider block completion non-fatal for navigation, but mark persistence as partial
+            persistenceSucceeded = false;
+          }
           toast({
             title: "Bloco Concluído!",
             description: `Parabéns! Você completou o bloco. (${pendingScore} pontos ganhos durante o jogo.)`,
           });
+          // Marca que finalizou um quiz/jogo para que o Dashboard atualize quando o usuário voltar
+          try {
+            if (persistenceSucceeded) {
+              sessionStorage.setItem('justFinishedQuiz', 'true');
+            }
+          } catch (e) {
+            // ignore storage errors
+          }
+
           // Após uma breve pausa para o usuário ver a tela de conclusão, redirecionamos para a Trilha
           setTimeout(() => {
             navigate('/trilha');

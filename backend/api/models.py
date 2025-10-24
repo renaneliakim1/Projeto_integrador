@@ -22,6 +22,13 @@ class UserProfile(models.Model):
         # Fallback to TextField if JSONField isn't available on older Django
         from django.db import models as _models
         blocos_completos = _models.TextField(default='[]', blank=True)
+    # Plano de estudo gerado para o usuário (JSON)
+    try:
+        from django.db.models import JSONField
+        study_plan = JSONField(default=dict, blank=True)
+    except Exception:
+        from django.db import models as _models
+        study_plan = _models.TextField(default='{}', blank=True)
 
 class AreaBNCC(models.Model):
     name = models.CharField(max_length=100, unique=True)

@@ -36,7 +36,7 @@ interface GamificationContextType {
     hearts: number;
     nextRefillInSeconds: number | null;
     userFocus: string;
-    addXp: (amount: number) => Promise<void>;
+    addXp: (amount: number) => Promise<{ new_level?: number; new_xp?: number; level_up?: boolean } | void>;
     completeQuest: (questId: string) => Promise<void>;
     completeBlock: (blockId: string) => Promise<void>;
     isBlockCompleted: (blockId: string) => boolean;
@@ -120,20 +120,34 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [isAuthenticated, fetchGamificationData]);
 
-    const xpForNextLevel = Math.floor(100 * Math.pow(stats.level, 1.5));
-    const progressPercentage = xpForNextLevel > 0 ? Math.max(0, Math.min(100, (stats.xp / xpForNextLevel) * 100)) : 0;
+    // Novo cálculo de nível baseado em blocos completados: a cada 15 blocos, sobe 1 nível
+    const calculatedLevel = Math.floor(blocosCompletos.length / 15) + 1;
+    const currentLevel = Math.max(stats.level, calculatedLevel); // Mantém o maior entre o calculado e o salvo
+    const blocksInCurrentLevel = blocosCompletos.length % 15;
+    const progressPercentage = (blocksInCurrentLevel / 15) * 100;
+    const xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5)); // Mantém XP para outras funcionalidades
 
     const addXp = useCallback(async (amount: number) => {
         if (!isAuthenticated) return;
         try {
             const response = await apiClient.post('/study/gamification/add-xp/', { amount });
-            const { level_up, new_level } = response.data;
+            const { level_up, new_level, new_xp } = response.data;
             if (level_up) {
                 toast({ title: `🚀 Level Up!`, description: `Você alcançou o Nível ${new_level}!`, className: 'bg-gradient-growth text-white border-none' });
             }
-            fetchGamificationData();
+            // Refresh local gamification state with server values
+            await fetchGamificationData();
+            // Notify other hooks/pages (Dashboard) that gamification data changed
+            try {
+                window.dispatchEvent(new CustomEvent('app:data:updated', { detail: { type: 'gamification' } }));
+            } catch (e) {
+                // ignore
+            }
+            return { level_up, new_level, new_xp };
         } catch (error) {
             console.error("Failed to add XP", error);
+            // Repropaga o erro para que chamadores (Game, Quiz) possam reagir/exibir erro e evitar marcar como concluído
+            throw error;
         }
     }, [isAuthenticated, fetchGamificationData, toast]);
 
@@ -209,6 +223,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                 } else if (Array.isArray(serverList)) {
                     setBlocosCompletos(serverList);
                 }
+                // Notify other parts of the app that gamification/block state changed
+                try {
+                    window.dispatchEvent(new CustomEvent('app:data:updated', { detail: { type: 'blocos_completos' } }));
+                } catch (e) {
+                    // ignore
+                }
             }
         } catch (e) {
             // Não bloquear a UX por conta de falha na rede / endpoint ausente
@@ -240,7 +260,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     }, [isAuthenticated, nextRefillInSeconds, hearts, refillHearts]);
 
     const value = {
-        level: stats.level,
+        level: currentLevel,
         xp: stats.xp,
         streak: stats.streak,
         userFocus,

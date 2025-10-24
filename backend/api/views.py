@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 import base64
 from django.conf import settings
+import google.generativeai as genai
+import json
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -94,6 +96,65 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         # Return the serialized data
         serializer = self.get_serializer(user)
         return Response(serializer.data)
+
+def gerar_plano_de_estudo(analise, escolaridade, foco, idade, max_streak, max_error_streak):
+    try:
+        api_key = getattr(settings, 'GEMINI_API_KEY', None)
+        if not api_key:
+            # Log error
+            return None
+
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+
+        desempenho = "\n".join([
+            f"- **{area}**: Acertou {dados['acertos']} de {dados['acertos'] + dados['erros'] + dados['pulos']} (pulou {dados['pulos']})."
+            for area, dados in analise.items()
+        ])
+
+        prompt = f"""... (o mesmo prompt que estava no frontend) ..."""
+
+        response = model.generate_content(prompt)
+        
+        # Limpeza da resposta para extrair o JSON
+        text = response.text.strip()
+        if text.startswith('```json'):
+            text = text[7:-3].strip()
+        elif text.startswith('```'):
+            text = text[3:-3].strip()
+
+        return json.loads(text)
+
+    except Exception as e:
+        # Log the exception e
+        return None
+
+class GenerateStudyPlanView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        profile = user.profile
+        
+        # Extrair dados do request
+        analise = request.data.get('analise')
+        max_streak = request.data.get('maxStreak')
+        max_error_streak = request.data.get('maxErrorStreak')
+
+        # Obter informações do perfil
+        escolaridade = profile.get_educational_level_display()
+        foco = profile.focus
+        idade = (timezone.now().date() - profile.birth_date).days // 365 if profile.birth_date else 25
+
+        # Gerar o plano de estudo
+        plano = gerar_plano_de_estudo(analise, escolaridade, foco, idade, max_streak, max_error_streak)
+
+        if plano:
+            profile.study_plan = plano
+            profile.save()
+            return Response({"detail": "Plano de estudo gerado com sucesso."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Falha ao gerar o plano de estudo."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UpdatePerformanceView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -303,3 +364,68 @@ class CompleteBlockView(generics.GenericAPIView):
                 profile.save()
 
         return Response({'blocos_completos': current}, status=status.HTTP_200_OK)
+
+
+class StudyPlanView(generics.GenericAPIView):
+    """Get / Save the study plan for the logged user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        profile = getattr(user, 'profile', None)
+        if profile is None:
+            return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        plan = getattr(profile, 'study_plan', None)
+        # Normalize TextField fallback
+        if isinstance(plan, str):
+            try:
+                import json
+                plan = json.loads(plan)
+            except Exception:
+                plan = None
+
+        return Response({'study_plan': plan}, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        # Expect a JSON object body with the plan
+        user = request.user
+        profile = getattr(user, 'profile', None)
+        if profile is None:
+            return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        plan = request.data
+        # Save into JSONField or TextField fallback
+        try:
+            profile.study_plan = plan
+            profile.save()
+        except Exception:
+            import json
+            profile.study_plan = json.dumps(plan)
+            profile.save()
+
+        return Response({'study_plan': plan}, status=status.HTTP_200_OK)
+
+
+class DeleteAccountView(generics.GenericAPIView):
+    """Endpoint seguro para exclusão completa da conta do usuário.
+
+    Recebe POST com JSON { "password": "..." } e, se a senha for válida,
+    deleta o usuário (e todas as relações com on_delete=CASCADE).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        password = request.data.get('password')
+        if not password:
+            return Response({'detail': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.check_password(password):
+            return Response({'detail': 'Invalid password.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Optionally: perform any cleanup here (delete files, revoke tokens, etc.)
+        username = user.username
+        user.delete()
+
+        return Response({'detail': f'User {username} deleted.'}, status=status.HTTP_200_OK)
