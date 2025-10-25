@@ -104,6 +104,9 @@ const Register = () => {
 
       const { access, refresh } = response.data;
       login(access, refresh);
+      
+      // Marca que o usuário acabou de se cadastrar para limpar caches antigos
+      sessionStorage.setItem('justRegistered', 'true');
 
       toast({
         title: "Conta criada com sucesso!",

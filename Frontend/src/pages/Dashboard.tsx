@@ -76,8 +76,8 @@ function CustomDayContent(props: DayContentProps) {
                 <div className="absolute -bottom-1">
                     <Flame className={cn(
                         "h-4 w-4",
-                        modifiers.practice && "text-orange-500",
-                        modifiers.failure && "text-sky-500"
+                        modifiers.practice && "text-yellow-500",
+                        modifiers.failure && "text-blue-500"
                     )} />
                 </div>
             )}
@@ -145,6 +145,10 @@ const Dashboard = () => {
     const justFinishedQuiz = sessionStorage.getItem('justFinishedQuiz') === 'true';
     if (justFinishedQuiz) {
       sessionStorage.removeItem('justFinishedQuiz');
+      // Força um refresh dos dados para atualizar pontos e atividades
+      setTimeout(() => {
+        refetchData();
+      }, 1000);
     }
   }, [refetchData]);
 
@@ -251,8 +255,26 @@ const Dashboard = () => {
   }
 
   // Corrigir o calendário: marcar dias baseados em atividades reais
-  const practiceDays = activities.filter(a => a.type === 'pratica').map(a => new Date(a.date));
-  const failureDays = activities.filter(a => a.type === 'falha').map(a => new Date(a.date));
+  // Normaliza as datas para comparação correta (ignora horas e timezone)
+  const practiceDays = activities
+    .filter(a => a.type === 'pratica')
+    .map(a => {
+      // Parse da string de data ISO (YYYY-MM-DD) sem considerar timezone
+      const dateStr = typeof a.date === 'string' ? a.date : a.date.toISOString().split('T')[0];
+      const [year, month, day] = dateStr.split('-').map(Number);
+      // Cria data no timezone local (sem conversão UTC)
+      return new Date(year, month - 1, day);
+    });
+    
+  const failureDays = activities
+    .filter(a => a.type === 'falha')
+    .map(a => {
+      // Parse da string de data ISO (YYYY-MM-DD) sem considerar timezone
+      const dateStr = typeof a.date === 'string' ? a.date : a.date.toISOString().split('T')[0];
+      const [year, month, day] = dateStr.split('-').map(Number);
+      // Cria data no timezone local (sem conversão UTC)
+      return new Date(year, month - 1, day);
+    });
 
   return (
     <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -341,14 +363,14 @@ const Dashboard = () => {
                         <h3 className="text-lg font-semibold mb-2 text-center lg:text-left">Estatísticas de Atividade</h3>
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
-                                <TrendingUp className="h-8 w-8 text-orange-500 flex-shrink-0" />
+                                <TrendingUp className="h-8 w-8 text-yellow-500 flex-shrink-0" />
                                 <div>
                                     <p className="font-bold text-2xl">{activityStats.longestPracticeStreak}</p>
                                     <p className="text-sm text-muted-foreground">Maior sequência de práticas</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
-                                <Flame className="h-8 w-8 text-sky-500 flex-shrink-0" />
+                                <Flame className="h-8 w-8 text-blue-500 flex-shrink-0" />
                                 <div>
                                     <p className="font-bold text-2xl">{activityStats.longestFailureStreak}</p>
                                     <p className="text-sm text-muted-foreground">Maior sequência de falhas</p>

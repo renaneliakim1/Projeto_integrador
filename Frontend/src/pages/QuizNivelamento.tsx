@@ -156,6 +156,7 @@ const QuizNivelamento = () => {
   const [maxStreak, setMaxStreak] = useState(0);
   const [errorStreak, setErrorStreak] = useState(0);
   const [maxErrorStreak, setMaxErrorStreak] = useState(0);
+  const [quizProcessado, setQuizProcessado] = useState(false);
 
   const [dadosGrafico, setDadosGrafico] = useState<DadosGrafico>([]);
 
@@ -168,6 +169,18 @@ const QuizNivelamento = () => {
     // Salva a contagem de blocos quando o quiz é iniciado
     if (blocosCompletos) {
       localStorage.setItem('blockCountOnQuizStart', String(blocosCompletos.length));
+    }
+    
+    // Verifica se o usuário acabou de se cadastrar e limpa cache de quiz anterior
+    const justRegistered = sessionStorage.getItem('justRegistered');
+    if (justRegistered === 'true') {
+      // Limpa todos os caches de quiz para garantir novo quiz para novo usuário
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('quizPerguntas_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      sessionStorage.removeItem('justRegistered');
     }
   }, [blocosCompletos]);
 
@@ -276,9 +289,11 @@ const QuizNivelamento = () => {
   }, [perguntasNivelamento, respostas]);
 
   useEffect(() => {
-    if (finalizado) {
+    if (finalizado && !quizProcessado) {
       (async () => {
         setIsSubmitting(true);
+        setQuizProcessado(true); // Marca como processado imediatamente para evitar re-execuções
+        
         try {
           const analise = calcularPlanoEstudo();
           const { acertos, total } = Object.values(analise).reduce(
@@ -333,7 +348,7 @@ const QuizNivelamento = () => {
         }
       })();
     }
-  }, [finalizado, calcularPlanoEstudo, toast, maxStreak, maxErrorStreak, updatePerformance, addXp, resetHearts, userFocus]);
+  }, [finalizado, quizProcessado, calcularPlanoEstudo, toast, maxStreak, maxErrorStreak, updatePerformance, addXp, resetHearts]);
 
   const proximaPergunta = (resposta: number | null) => {
     const perguntaAtual = perguntasNivelamento[indice];
@@ -377,70 +392,55 @@ const QuizNivelamento = () => {
 
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <Card className="max-w-5xl mx-auto shadow-elevated overflow-hidden">
+        <Card className="max-w-4xl mx-auto shadow-elevated overflow-hidden">
           <CardHeader className="bg-muted/30 p-6">
             <h2 className="text-3xl font-bold text-center text-primary">Seu Desempenho no Quiz!</h2>
           </CardHeader>
-          <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-            <div className="flex flex-col gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Target size={20} /> Desempenho por Matéria</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}> 
-                    <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                      <XAxis type="number" hide />
-                      <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                      <Tooltip cursor={{ fill: 'rgba(240, 240, 240, 0.5)' }} contentStyle={{backgroundColor: '#fff', border: '1px solid #ccc'}}/>
-                      <Legend wrapperStyle={{paddingTop: '20px'}}/>
-                      <Bar dataKey="acertos" name="Acertos" stackId="a" fill="#22c55e" radius={[0, 4, 4, 0]} />
-                      <Bar dataKey="erros" name="Erros/Pulos" stackId="a" fill="#ef4444" radius={[4, 0, 0, 4]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <Card className="text-center p-4">
-                      <Award size={24} className="mx-auto text-primary"/>
-                      <p className="text-2xl font-bold mt-2">+{acertos * 10}</p>
-                      <p className="text-xs text-muted-foreground">XP Ganhos</p>
-                  </Card>
-                  <Card className="text-center p-4">
-                      <TrendingUp size={24} className="mx-auto text-green-500"/>
-                      <p className="text-2xl font-bold mt-2">{maxStreak}</p>
-                      <p className="text-xs text-muted-foreground">Melhor Sequência</p>
-                  </Card>
-                  <Card className="text-center p-4">
-                      <TrendingDown size={24} className="mx-auto text-red-500"/>
-                      <p className="text-2xl font-bold mt-2">{maxErrorStreak}</p>
-                      <p className="text-xs text-muted-foreground">Pior Sequência</p>
-                  </Card>
-                   <Card className="text-center p-4">
-                      <Star size={24} className="mx-auto text-yellow-400"/>
-                      <p className="text-2xl font-bold mt-2">{acertos}/{total}</p>
-                      <p className="text-xs text-muted-foreground">Acertos</p>
-                  </Card>
-              </div>
-            </div>
-            
-            <Card className="bg-muted/20 flex flex-col">
+          <CardContent className="p-6 space-y-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">🚀 Seu Plano de Estudo Personalizado</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Target size={20} /> Desempenho por Matéria</CardTitle>
               </CardHeader>
-              <CardContent className="flex-grow p-6 space-y-6">
-                <div className="flex items-center justify-center h-full">
-                  <LoadingAnimation 
-                    text="Estamos criando seu plano de estudo com IA..."
-                    subtext="Você pode avançar e o encontrará no seu dashboard em breve!"
-                  />
-                </div>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}> 
+                  <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                    <Tooltip cursor={{ fill: 'rgba(240, 240, 240, 0.5)' }} contentStyle={{backgroundColor: '#fff', border: '1px solid #ccc'}}/>
+                    <Legend wrapperStyle={{paddingTop: '20px'}}/>
+                    <Bar dataKey="acertos" name="Acertos" stackId="a" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="erros" name="Erros/Pulos" stackId="a" fill="#ef4444" radius={[4, 0, 0, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Card className="text-center p-4">
+                <Award size={24} className="mx-auto text-primary"/>
+                <p className="text-2xl font-bold mt-2">+{acertos * 10}</p>
+                <p className="text-xs text-muted-foreground">XP Ganhos</p>
+              </Card>
+              <Card className="text-center p-4">
+                <TrendingUp size={24} className="mx-auto text-green-500"/>
+                <p className="text-2xl font-bold mt-2">{maxStreak}</p>
+                <p className="text-xs text-muted-foreground">Melhor Sequência</p>
+              </Card>
+              <Card className="text-center p-4">
+                <TrendingDown size={24} className="mx-auto text-red-500"/>
+                <p className="text-2xl font-bold mt-2">{maxErrorStreak}</p>
+                <p className="text-xs text-muted-foreground">Pior Sequência</p>
+              </Card>
+              <Card className="text-center p-4">
+                <Star size={24} className="mx-auto text-yellow-400"/>
+                <p className="text-2xl font-bold mt-2">{acertos}/{total}</p>
+                <p className="text-xs text-muted-foreground">Acertos</p>
+              </Card>
+            </div>
           </CardContent>
           <div className="p-6 border-t text-center">
-             <Button size="lg" className="bg-gradient-growth" onClick={() => navigate("/dashboard")}>Avançar</Button>
+            <p className="text-muted-foreground mb-4">Seu plano de estudo personalizado está sendo gerado com IA!</p>
+            <Button size="lg" className="bg-gradient-growth" onClick={() => navigate("/study-plan")}>Avançar</Button>
           </div>
         </Card>
       </div>
