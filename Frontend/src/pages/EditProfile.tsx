@@ -55,6 +55,7 @@ const EditProfile = () => {
   // Delete account modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAccountDeleted, setIsAccountDeleted] = useState(false);
 
@@ -432,14 +433,19 @@ const EditProfile = () => {
 
                   <div className="mt-4">
                     <Label htmlFor="delete-password" className="block text-sm font-medium text-foreground mb-2">Senha</Label>
-                    <Input
-                      id="delete-password"
-                      type="password"
-                      value={deletePassword}
-                      onChange={(e) => setDeletePassword(e.target.value)}
-                      placeholder="Digite sua senha"
-                      className="bg-background/50 border-border/50"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="delete-password"
+                        type={showDeletePassword ? "text" : "password"}
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Digite sua senha"
+                        className="bg-background/50 border-border/50"
+                      />
+                      <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-0 h-full px-3" onClick={() => setShowDeletePassword(!showDeletePassword)}>
+                        {showDeletePassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="mt-6 flex justify-end gap-3">
