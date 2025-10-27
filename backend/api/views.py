@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics, permissions, status
 from .serializers import UserSerializer, UserDetailSerializer, ActivityLogSerializer
-from .models import UserPerformance, Subject, ActivityLog, Gamification, Quest, UserQuest
+from .models import UserPerformance, Subject, ActivityLog, Gamification, Quest, UserQuest, AreaBNCC
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -177,13 +177,20 @@ class UpdatePerformanceView(generics.GenericAPIView):
 
             try:
                 subject = Subject.objects.get(name=subject_name)
-                performance, created = UserPerformance.objects.get_or_create(user=user, subject=subject)
-                performance.correct_answers += correct
-                performance.incorrect_answers += incorrect
-                performance.save()
             except Subject.DoesNotExist:
-                # Opcional: lidar com o caso de a matéria não existir
-                pass
+                # Matéria não existe - cria automaticamente com área padrão
+                print(f"⚠️ UpdatePerformanceView: Matéria '{subject_name}' não encontrada. Criando automaticamente...")
+                
+                # Busca ou cria a área "Conhecimentos Gerais" como padrão
+                area, _ = AreaBNCC.objects.get_or_create(name='Conhecimentos Gerais')
+                subject = Subject.objects.create(name=subject_name, area=area)
+                print(f"✅ UpdatePerformanceView: Matéria '{subject_name}' criada na área '{area.name}'")
+            
+            # Registra ou atualiza a performance
+            performance, created = UserPerformance.objects.get_or_create(user=user, subject=subject)
+            performance.correct_answers += correct
+            performance.incorrect_answers += incorrect
+            performance.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

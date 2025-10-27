@@ -56,6 +56,52 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
+// Lista de matérias válidas (deve corresponder às matérias do backend)
+const MATERIAS_VALIDAS = [
+  'Matemática',
+  'Português',
+  'História',
+  'Geografia',
+  'Biologia',
+  'Física',
+  'Química',
+  'Inglês',
+  'Lógica',
+  'Informática',
+  'Programação',
+  'Filosofia',
+  'Sociologia'
+];
+
+// Função para validar e normalizar matérias
+const validarMateria = (area: string): string => {
+  // Normaliza: remove acentos, converte para minúsculas para comparação
+  const areaNormalizada = area.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  // Busca correspondência exata (case-insensitive)
+  const materiaValida = MATERIAS_VALIDAS.find(
+    m => m.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === areaNormalizada
+  );
+  
+  if (materiaValida) {
+    return materiaValida;
+  }
+  
+  // Se não encontrar, tenta correspondência parcial
+  const materiaAproximada = MATERIAS_VALIDAS.find(
+    m => areaNormalizada.includes(m.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+  );
+  
+  if (materiaAproximada) {
+    console.warn(`⚠️ Matéria "${area}" corrigida para "${materiaAproximada}"`);
+    return materiaAproximada;
+  }
+  
+  // Se não encontrar nenhuma correspondência, usa "Lógica" como padrão
+  console.error(`❌ Matéria inválida detectada: "${area}". Usando "Lógica" como padrão.`);
+  return 'Lógica';
+};
+
 async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: number): Promise<PerguntaQuiz[]> {
   if (!API_KEY) {
     console.error("API Key do Google não encontrada. Verifique o arquivo .env e a variável VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY.");
@@ -82,12 +128,30 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
           - O campo "foco" indica o CONTEXTO ou ESTILO de prova para o qual o aluno está estudando, não um tópico sobre o qual fazer perguntas.
           - **Exemplo:** Se o foco for "ENEM" ou "Vestibular", você deve gerar perguntas com o **estilo e a complexidade** encontradas nessas provas, abrangendo as matérias relevantes (Matemática, Português, História, etc.). NÃO faça perguntas como "Quando ocorre o ENEM?" ou "Quantas questões tem a prova do ENEM?".
 
-      3.  **Distribuição das Perguntas:**
-          - Gere 12 questões alinhadas ao "foco" principal.
-          - **Se o foco for um exame abrangente (como ENEM):** Distribua essas 12 questões entre as principais áreas do exame (ex: 3 de Matemática, 3 de Linguagens, 3 de Ciências Humanas, 3 de Ciências da Natureza).
-          - Gere 13 questões de Conhecimentos Gerais, distribuídas entre áreas relevantes (Lógica, Inglês, Geografia, etc.), excluindo a área de foco se ela for específica (ex: se o foco for "Matemática", não inclua matemática nas gerais).
+      3.  **MATÉRIAS PERMITIDAS (OBRIGATÓRIO):**
+          - Use APENAS as seguintes matérias no campo "area":
+            * Matemática
+            * Português
+            * História
+            * Geografia
+            * Biologia
+            * Física
+            * Química
+            * Inglês
+            * Lógica
+            * Informática
+            * Programação
+            * Filosofia
+            * Sociologia
+          - **NUNCA use matérias como:** Design, Artes, Música, Educação Física, ou qualquer outra não listada acima.
+          - Se o foco do usuário não estiver na lista (ex: "ENEM"), distribua as perguntas entre as matérias listadas.
 
-      4.  **Formato de Saída:**
+      4.  **Distribuição das Perguntas:**
+          - Gere 12 questões alinhadas ao "foco" principal (usando matérias da lista).
+          - **Se o foco for um exame abrangente (como ENEM):** Distribua essas 12 questões entre as principais áreas do exame usando APENAS matérias da lista permitida.
+          - Gere 13 questões de Conhecimentos Gerais, distribuídas entre as matérias permitidas, excluindo a área de foco se ela for específica.
+
+      5.  **Formato de Saída:**
           - A resposta DEVE ser um array JSON contendo os 25 objetos de pergunta.
           - Não inclua NENHUM texto, markdown, ou qualquer formatação fora do array JSON.
           - Cada objeto no array deve seguir estritamente a estrutura:
@@ -95,7 +159,7 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
               "pergunta": "O texto completo da pergunta",
               "alternativas": ["alternativa A", "alternativa B", "alternativa C", "alternativa D"],
               "resposta": o índice da alternativa correta (de 0 a 3),
-              "area": "O nome da matéria ou área de conhecimento"
+              "area": "Nome da matéria (DEVE ser uma das listadas acima)"
             }
     `;
     
@@ -104,10 +168,28 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
 
     try {
       const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/);
+      let perguntas: PerguntaQuiz[] = [];
+      
       if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
+        perguntas = JSON.parse(jsonMatch[1]);
+      } else {
+        perguntas = JSON.parse(text);
       }
-      return JSON.parse(text);
+      
+      // Valida e normaliza as matérias de cada pergunta
+      perguntas = perguntas.map(p => ({
+        ...p,
+        area: validarMateria(p.area)
+      }));
+      
+      // Log para debug: mostrar distribuição de matérias
+      const distribuicao = perguntas.reduce((acc, p) => {
+        acc[p.area] = (acc[p.area] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('📊 Distribuição de matérias no quiz:', distribuicao);
+      
+      return perguntas;
     } catch (e) {
       console.error("Erro ao fazer parse do JSON da resposta da IA:", e);
       console.error("Resposta recebida que causou o erro:", text);
