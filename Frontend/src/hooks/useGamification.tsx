@@ -135,13 +135,14 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             const response = await apiClient.post('/study/gamification/add-xp/', { amount });
             console.log(`useGamification.addXp: Resposta do backend:`, response.data);
             const { level_up, new_level, new_xp } = response.data;
+            
+            // Atualiza o estado local imediatamente com os dados retornados (mais rápido)
+            setStats(prev => ({ ...prev, level: new_level, xp: new_xp }));
+            
             if (level_up) {
                 toast({ title: `🚀 Level Up!`, description: `Você alcançou o Nível ${new_level}!`, className: 'bg-gradient-growth text-white border-none' });
             }
-            // Refresh local gamification state with server values
-            console.log(`useGamification.addXp: Buscando dados atualizados...`);
-            await fetchGamificationData();
-            console.log(`useGamification.addXp: Dados atualizados com sucesso`);
+            
             // Notify other hooks/pages (Dashboard) that gamification data changed
             try {
                 window.dispatchEvent(new CustomEvent('app:data:updated', { detail: { type: 'gamification' } }));
@@ -154,7 +155,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             // Repropaga o erro para que chamadores (Game, Quiz) possam reagir/exibir erro e evitar marcar como concluído
             throw error;
         }
-    }, [isAuthenticated, fetchGamificationData, toast]);
+    }, [isAuthenticated, toast]);
 
     const completeQuest = async (questId: string) => {
         if (!isAuthenticated) return;

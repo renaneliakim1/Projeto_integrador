@@ -235,6 +235,10 @@ const EditProfile = () => {
         title: "Perfil atualizado com sucesso!",
         description: "Suas informações foram salvas.",
       });
+      
+      // Notifica Profile.tsx para atualizar os dados
+      window.dispatchEvent(new CustomEvent('app:data:updated', { detail: { type: 'profile' } }));
+      
       navigate("/perfil");
 
     } catch (error: any) {

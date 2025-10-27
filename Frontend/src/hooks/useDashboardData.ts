@@ -48,13 +48,14 @@ export const useDashboardData = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const [userResponse, activityResponse] = await Promise.all([
-                apiClient.get('/users/me/'),
-                apiClient.get('/activity-log/')
-            ]);
-
+            // Faz apenas UMA requisição para /users/me/ que já retorna tudo
+            const userResponse = await apiClient.get('/users/me/');
             const userData = userResponse.data;
+            
+            // Busca activity log separadamente (menor e mais rápido)
+            const activityResponse = await apiClient.get('/activity-log/');
             const activityData = activityResponse.data;
+            
             // Normalize possible string fields (server may return JSON as string fallback)
             const profile = userData.profile || {};
             try {
@@ -91,16 +92,6 @@ export const useDashboardData = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
-
-    // Listen for app-level updates (dispatched by hooks like useGamification)
-    useEffect(() => {
-        const handler = () => {
-            // re-fetch data when other parts of the app notify of updates
-            fetchData();
-        };
-        window.addEventListener('app:data:updated', handler as EventListener);
-        return () => window.removeEventListener('app:data:updated', handler as EventListener);
     }, [fetchData]);
 
     return { ...data, isLoading, error, refetchData: fetchData };

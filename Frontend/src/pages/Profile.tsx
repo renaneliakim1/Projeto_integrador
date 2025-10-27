@@ -50,21 +50,18 @@ const Profile = () => {
 
   const { toast } = useToast();
   const { logout } = useAuth();
-  const [isUserInfoLoading, setIsUserInfoLoading] = useState(true);
 
   const [userInfo, setUserInfo] = useState({
     name: '',
     email: '',
     focus: '',
     photo: null as string | null,
-    joinDate: '...'
+    joinDate: 'Setembro 2025'
   });
 
-  
-
+  // Fetch inicial dos dados do usuário
   useEffect(() => {
     const fetchUserData = async () => {
-      setIsUserInfoLoading(true);
       try {
         const response = await apiClient.get<UserData>('/users/me/');
         const { data } = response;
@@ -74,19 +71,39 @@ const Profile = () => {
           email: data.email,
           focus: data.profile.focus,
           photo: data.profile.foto,
-          joinDate: 'Setembro 2025' // Mantido como exemplo
+          joinDate: 'Setembro 2025'
         });
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
-        toast({ title: "Sessão expirada", description: "Faça o login novamente.", variant: "destructive" });
-        logout();
-      } finally {
-        setIsUserInfoLoading(false);
       }
     };
 
     fetchUserData();
-  }, [logout, toast]);
+  }, []);
+
+  // Event listener para atualizar APENAS após editar perfil
+  useEffect(() => {
+    const handleDataUpdate = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.type === 'profile') {
+        try {
+          const response = await apiClient.get<UserData>('/users/me/');
+          const { data } = response;
+          setUserInfo({
+            name: data.first_name,
+            email: data.email,
+            focus: data.profile.focus,
+            photo: data.profile.foto,
+            joinDate: 'Setembro 2025'
+          });
+        } catch (error) {
+          console.error("Erro ao atualizar dados do perfil:", error);
+        }
+      }
+    };
+    window.addEventListener('app:data:updated', handleDataUpdate);
+    return () => window.removeEventListener('app:data:updated', handleDataUpdate);
+  }, []);
 
   const handleShare = async () => {
     const profileText = `Meu Perfil Skillio:\nNome: ${userInfo.name}\nNível: ${level}\nXP: ${xp}\nBlocos Completos: ${blocosCompletos?.length || 0}`;
@@ -107,7 +124,7 @@ const Profile = () => {
     }
   };
 
-  if (isUserInfoLoading || isGamificationLoading) {
+  if (isGamificationLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />

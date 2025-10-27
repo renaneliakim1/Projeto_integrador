@@ -44,10 +44,6 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         # Retorna o usuário associado à requisição atual
         user = self.request.user
-        # Force refresh gamification from DB
-        if hasattr(user, 'gamification'):
-            user.gamification.refresh_from_db()
-            print(f"UserProfileView.get_object: User {user.username} (ID: {user.id}), Gamification XP: {user.gamification.xp}, Level: {user.gamification.level}")
         return user
 
     def update(self, request, *args, **kwargs):
