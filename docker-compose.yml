@@ -32,12 +32,13 @@ services:
       - DATABASE_URL=postgresql://skillio_user:skillio_password@db:5432/skillio_db
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=django-insecure-change-this-in-production
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://0.0.0.0:3000
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://0.0.0.0:3000,http://192.168.0.89:3000
+      - GOOGLE_API_KEY=AIzaSyBQquDkHNvJnHKgRKPrbfcqWITVVfEH9Yg
     volumes:
       - ./backend:/app
       - ./backend/media:/app/media
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -56,9 +57,16 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_BASE_URL=http://192.168.0.89:8000
+      - VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY=AIzaSyBQquDkHNvJnHKgRKPrbfcqWITVVfEH9Yg
+      - VITE_EMAILJS_SERVICE_ID=service_d427cse
+      - VITE_EMAILJS_TEMPLATE_ID=template_sen9xx4
+      - VITE_EMAILJS_USER_ID=sNWIk3c3ZX9fB_hHq
+      - VITE_SUPABASE_URL=https://cpqecntjnimngamjzznr.supabase.co
+      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwcWVjbnRqbmltbmdhbWp6em5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5OTcwMTEsImV4cCI6MjA3NTU3MzAxMX0._ySrpA-EHt-EG44ceHSVSK8Pw97WbMhbOVIu4jrNhY4
+      - VITE_YOUTUBE_API_KEY=AIzaSyCe8NF26zl2vwSQBKoPrEfFT2RRHaIOlG4
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     depends_on:
       - backend
     volumes:
