@@ -55,12 +55,26 @@ const enriquecerTopico = (area: string, topic: StudyPlanTopic, index: number): S
       'Trigonometria (seno, cosseno, tangente)',
     ],
     'português': [
-      'Classes gramaticais (substantivo, verbo, adjetivo)',
-      'Sintaxe e análise sintática (sujeito, predicado, complementos)',
-      'Interpretação de textos e gêneros textuais',
+      'Classes gramaticais: substantivo, verbo, adjetivo, advérbio',
+      'Pronomes: pessoais, possessivos, demonstrativos, relativos',
+      'Preposições e conjunções: uso e classificação',
+      'Sintaxe: sujeito, predicado, objeto direto e indireto',
       'Concordância nominal e verbal',
-      'Pontuação e uso de pronomes',
-      'Figuras de linguagem e recursos estilísticos',
+      'Regência nominal e verbal',
+      'Crase: quando usar e casos especiais',
+      'Acentuação gráfica e regras de acentuação',
+      'Ortografia: uso de S, SS, Ç, X, CH',
+      'Sílaba tônica: oxítonas, paroxítonas e proparoxítonas',
+      'Pontuação: vírgula, ponto e vírgula, dois pontos',
+      'Interpretação de textos narrativos, descritivos e dissertativos',
+      'Gêneros textuais: crônica, notícia, artigo de opinião',
+      'Coesão e coerência textual',
+      'Figuras de linguagem: metáfora, metonímia, hipérbole',
+      'Verbos: conjugação, tempos verbais e modos (indicativo, subjuntivo, imperativo)',
+      'Vozes verbais: ativa, passiva e reflexiva',
+      'Orações subordinadas: substantivas, adjetivas e adverbiais',
+      'Período composto por coordenação e subordinação',
+      'Semântica: sinônimos, antônimos, homônimos e parônimos',
     ],
     'história': [
       'Descobrimento do Brasil e colonização portuguesa',
@@ -118,6 +132,30 @@ const enriquecerTopico = (area: string, topic: StudyPlanTopic, index: number): S
       'Análise combinatória',
       'Resolução de problemas complexos',
     ],
+    'direito': [
+      'Introdução ao Direito e conceitos fundamentais',
+      'Direito Constitucional: princípios e garantias fundamentais',
+      'Direito Civil: pessoas, bens e fatos jurídicos',
+      'Direito Penal: crimes e penas',
+      'Direito do Trabalho: relações de emprego e direitos trabalhistas',
+      'Direito Administrativo: organização do Estado e serviços públicos',
+    ],
+    'programação': [
+      'Lógica de programação e algoritmos',
+      'Variáveis, tipos de dados e operadores',
+      'Estruturas condicionais (if, else, switch)',
+      'Estruturas de repetição (for, while)',
+      'Funções e modularização de código',
+      'Estruturas de dados: arrays, listas, pilhas, filas',
+    ],
+    'enem': [
+      'Redação: estrutura dissertativa-argumentativa',
+      'Interpretação de textos e questões interdisciplinares',
+      'Matemática e suas tecnologias',
+      'Ciências da Natureza e suas tecnologias',
+      'Ciências Humanas e suas tecnologias',
+      'Linguagens, Códigos e suas tecnologias',
+    ],
   };
 
   // Verifica se o tópico é genérico
@@ -169,8 +207,42 @@ const StudyPlanDisplay = ({ plan, userFocus }: { plan: StudyPlan | null; userFoc
   // Reorganiza o plano para priorizar o foco do usuário
   const reorganizarPlanoPorFoco = (actions: StudyPlanAction[], foco: string): StudyPlanAction[] => {
     const focoLower = foco.toLowerCase();
-    const acoesFoco = actions.filter(a => a.area.toLowerCase().includes(focoLower));
+    console.log('🎯 DEBUG StudyPlan - Reorganizando por foco:', { foco, focoLower });
+    console.log('🎯 DEBUG StudyPlan - Actions disponíveis:', actions.map(a => a.area));
+    
+    const acoesFoco = actions.filter(a => {
+      const match = a.area.toLowerCase().includes(focoLower);
+      console.log(`  - "${a.area}" contains "${focoLower}"? ${match}`);
+      return match;
+    });
     const acoesOutras = actions.filter(a => !a.area.toLowerCase().includes(focoLower));
+    
+    console.log('🎯 DEBUG StudyPlan - Ações do foco:', acoesFoco.map(a => a.area));
+    console.log('🎯 DEBUG StudyPlan - Outras ações:', acoesOutras.map(a => a.area));
+    
+    // Se não encontrou nenhum card do foco E o foco não é genérico, cria um card automaticamente
+    if (acoesFoco.length === 0 && foco && foco !== 'Conhecimentos Gerais') {
+      console.log('🎯 DEBUG StudyPlan - Foco não encontrado! Criando card automático para:', foco);
+      const cardDoFoco: StudyPlanAction = {
+        area: foco,
+        emoji: '🎯',
+        topics: [
+          {
+            title: 'Fundamentos',
+            description: `Estude os conceitos fundamentais de ${foco}.`
+          },
+          {
+            title: 'Prática',
+            description: `Resolva exercícios práticos de ${foco}.`
+          },
+          {
+            title: 'Aprofundamento',
+            description: `Aprofunde seus conhecimentos em ${foco}.`
+          }
+        ]
+      };
+      return [cardDoFoco, ...acoesOutras];
+    }
     
     // Retorna primeiro as ações do foco, depois as outras
     return [...acoesFoco, ...acoesOutras];
@@ -236,12 +308,18 @@ const StudyPlanDisplay = ({ plan, userFocus }: { plan: StudyPlan | null; userFoc
         </div>
         <p className="text-muted-foreground text-sm mb-6">
           Com base na sua performance no quiz, organizamos os conteúdos que você precisa estudar do básico ao avançado.
+          {userFocus && userFocus !== 'Conhecimentos Gerais' && (
+            <span className="block mt-2 text-primary font-semibold">
+              🎯 Priorizando: {userFocus}
+            </span>
+          )}
         </p>
         
         <div className="space-y-6">
           {actionPlanOrdenado.map((action: StudyPlanAction, index: number) => {
             // Verifica se esta ação é do foco principal do usuário
             const ehFocoPrincipal = action.area.toLowerCase().includes((userFocus || '').toLowerCase());
+            console.log(`🎯 DEBUG Card ${action.area} - ehFocoPrincipal:`, ehFocoPrincipal, 'userFocus:', userFocus);
             
             // Determina o nível e a cor baseado no índice
             const nivelInfo = index === 0 
@@ -335,6 +413,8 @@ const StudyPlan = () => {
   const navigate = useNavigate();
   const { level, blocosCompletos, userFocus } = useGamification();
 
+  console.log('🎯 DEBUG StudyPlan Component - userFocus:', userFocus);
+
   useEffect(() => {
     // Função para corrigir o plano de estudo com o foco correto do usuário
     const corrigirFocoDoPlano = (plan: StudyPlan, focoReal: string): StudyPlan => {
@@ -351,27 +431,41 @@ const StudyPlan = () => {
     (async () => {
       try {
         // Try loading from server first
+        console.log('🎯 DEBUG: Carregando plano do servidor...');
         const resp = await apiClient.get('/users/me/');
+        console.log('🎯 DEBUG: Resposta recebida:', resp.data);
+        console.log('🎯 DEBUG: Profile:', resp.data?.profile);
+        console.log('🎯 DEBUG: Profile.focus:', resp.data?.profile?.focus);
+        console.log('🎯 DEBUG: Profile.study_plan:', resp.data?.profile?.study_plan);
+        
         let serverPlan = resp.data?.profile?.study_plan;
         if (typeof serverPlan === 'string') {
+          console.log('🎯 DEBUG: Plano é string, fazendo parse...');
           try {
             serverPlan = JSON.parse(serverPlan);
+            console.log('🎯 DEBUG: Parse bem-sucedido:', serverPlan);
           } catch (e) {
+            console.error('🎯 DEBUG: Erro no parse:', e);
             serverPlan = null;
           }
         }
         if (serverPlan && Object.keys(serverPlan).length > 0) {
+          console.log('🎯 DEBUG: Plano válido encontrado! Chaves:', Object.keys(serverPlan));
+          console.log('🎯 DEBUG: userFocus atual:', userFocus);
           // Corrige o foco do plano para usar o foco real do usuário
           const planCorrigido = corrigirFocoDoPlano(serverPlan, userFocus || 'Conhecimentos Gerais');
+          console.log('🎯 DEBUG: Plano corrigido:', planCorrigido);
           setStudyPlan(planCorrigido);
           setCarregando(false);
           return;
         } else {
+          console.log('🎯 DEBUG: Plano vazio ou inválido');
           // if serverPlan exists but is empty object, treat as no plan
           setStudyPlan(null);
         }
       } catch (e) {
         // ignore and fallback to localStorage
+        console.error('🎯 DEBUG: Erro ao carregar do servidor:', e);
         console.warn('Could not fetch study plan from server, falling back to localStorage', e);
       }
 

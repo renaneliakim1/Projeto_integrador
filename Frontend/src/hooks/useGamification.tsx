@@ -81,7 +81,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                 const serverHearts = typeof gam.hearts === 'number' ? gam.hearts : 5;
                 setHearts(serverHearts);
                 // user focus vindo do profile (o tópico que o usuário escolheu durante registro)
-                if (data.profile.focus) setUserFocus(data.profile.focus);
+                if (data.profile.focus) {
+                    console.log('🎯 DEBUG useGamification - Focus carregado do perfil:', data.profile.focus);
+                    setUserFocus(data.profile.focus);
+                } else {
+                    console.log('⚠️ DEBUG useGamification - Profile.focus está vazio, usando default');
+                }
 
                 // Cálculo local do tempo até a próxima vida com base no timestamp do servidor
                 if (gam.hearts_last_refill && serverHearts < 5) {

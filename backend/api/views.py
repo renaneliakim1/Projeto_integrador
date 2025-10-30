@@ -100,9 +100,14 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 def gerar_plano_de_estudo(analise, escolaridade, foco, idade, max_streak, max_error_streak):
     try:
+        print(f"   🤖 gerar_plano_de_estudo: Iniciando...")
+        print(f"      - Foco: '{foco}'")
+        print(f"      - Escolaridade: '{escolaridade}'")
+        print(f"      - Idade: {idade}")
+        
         api_key = getattr(settings, 'GEMINI_API_KEY', None)
         if not api_key:
-            # Log error
+            print(f"   ❌ GEMINI_API_KEY não configurada!")
             return None
 
         genai.configure(api_key=api_key)
@@ -115,19 +120,26 @@ def gerar_plano_de_estudo(analise, escolaridade, foco, idade, max_streak, max_er
 
         prompt = f"""... (o mesmo prompt que estava no frontend) ..."""
 
+        print(f"   🤖 Chamando Gemini API...")
         response = model.generate_content(prompt)
         
         # Limpeza da resposta para extrair o JSON
         text = response.text.strip()
+        print(f"   📄 Resposta recebida ({len(text)} chars)")
+        
         if text.startswith('```json'):
             text = text[7:-3].strip()
         elif text.startswith('```'):
             text = text[3:-3].strip()
 
-        return json.loads(text)
+        plano = json.loads(text)
+        print(f"   ✅ JSON parsed com sucesso! Chaves: {list(plano.keys())}")
+        return plano
 
     except Exception as e:
-        # Log the exception e
+        print(f"   ❌ Erro ao gerar plano: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 class GenerateStudyPlanView(generics.GenericAPIView):
@@ -137,10 +149,15 @@ class GenerateStudyPlanView(generics.GenericAPIView):
         user = request.user
         profile = user.profile
         
+        print(f"🎯 GenerateStudyPlanView: Gerando plano para {user.email}")
+        
         # Extrair dados do request
         analise = request.data.get('analise')
         max_streak = request.data.get('maxStreak')
         max_error_streak = request.data.get('maxErrorStreak')
+
+        print(f"   📊 Análise recebida: {list(analise.keys()) if analise else 'None'}")
+        print(f"   🎯 Focus do perfil: '{profile.focus}'")
 
         # Obter informações do perfil
         escolaridade = profile.get_educational_level_display()
@@ -148,13 +165,17 @@ class GenerateStudyPlanView(generics.GenericAPIView):
         idade = (timezone.now().date() - profile.birth_date).days // 365 if profile.birth_date else 25
 
         # Gerar o plano de estudo
+        print(f"   🤖 Chamando gerar_plano_de_estudo...")
         plano = gerar_plano_de_estudo(analise, escolaridade, foco, idade, max_streak, max_error_streak)
 
         if plano:
+            print(f"   ✅ Plano gerado com sucesso! Chaves: {list(plano.keys())}")
             profile.study_plan = plano
             profile.save()
+            print(f"   💾 Plano salvo no profile de {user.email}")
             return Response({"detail": "Plano de estudo gerado com sucesso."}, status=status.HTTP_200_OK)
         else:
+            print(f"   ❌ Falha ao gerar plano (retornou None)")
             return Response({"detail": "Falha ao gerar o plano de estudo."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UpdatePerformanceView(generics.GenericAPIView):

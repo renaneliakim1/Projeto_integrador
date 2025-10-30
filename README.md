@@ -53,6 +53,8 @@ Esta é a forma mais simples de executar o projeto completo, pois configura auto
 3. **Acesse as aplicações:**
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:8000
+   - **Swagger UI**: http://localhost:8000/swagger/
+   - **ReDoc**: http://localhost:8000/redoc/
    - **Admin Django**: http://localhost:8000/admin
 
 #### Acesso em Outro Dispositivo/Rede
@@ -135,6 +137,11 @@ Para desenvolvimento, você pode executar cada parte separadamente.
    ```
 
    O backend estará disponível em: http://127.0.0.1:8000
+
+7. **Acesse a documentação da API (Swagger):**
+   - **Swagger UI**: http://127.0.0.1:8000/swagger/
+   - **ReDoc**: http://127.0.0.1:8000/redoc/
+   - **Schema JSON**: http://127.0.0.1:8000/swagger.json
 
 #### ⚛️ Frontend (React + TypeScript)
 
@@ -223,6 +230,10 @@ docker run --name skillio-postgres \
 - Certifique-se de que o ambiente virtual está ativado
 - Reinstale as dependências: `pip install -r ../requirements.txt`
 
+### Erro: "ModuleNotFoundError: No module named 'drf_yasg'"
+
+- Instale o pacote: `pip install drf-yasg`
+
 ### Erro: "Porta já em uso"
 
 - Mude as portas no `docker-compose.yml` ou pare outros serviços
@@ -231,6 +242,33 @@ docker run --name skillio-postgres \
 
 - Verifique se o backend está rodando
 - Confirme a URL da API no `.env` do frontend
+
+## 📖 Documentação da API (Swagger)
+
+O projeto possui documentação interativa da API usando **Swagger/OpenAPI**.
+
+### Acesso à Documentação
+
+- **Swagger UI** (Interativo): http://localhost:8000/swagger/
+- **ReDoc** (Limpo): http://localhost:8000/redoc/
+- **Schema JSON**: http://localhost:8000/swagger.json
+- **Schema YAML**: http://localhost:8000/swagger.yaml
+
+### Como Autenticar no Swagger
+
+1. Faça login via `/api/v1/auth/login/` para obter o token JWT
+2. Clique no botão **🔒 Authorize** no topo do Swagger
+3. Digite: `Bearer SEU_TOKEN_AQUI`
+4. Clique em "Authorize"
+5. Agora você pode testar todos os endpoints protegidos!
+
+### Principais Endpoints Documentados
+
+- **Autenticação**: Login, refresh token
+- **Usuários**: Registro, perfil, atualização
+- **Gamificação**: XP, vidas, blocos, conquistas
+- **Performance**: Atualização de desempenho por matéria
+- **Activity Log**: Histórico de atividades do usuário
 
 ## 📚 Documentação Adicional
 

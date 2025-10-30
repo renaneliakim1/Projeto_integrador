@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'drf_yasg',
     'api',
 
 ]
@@ -185,3 +186,18 @@ GAMIFICATION_REFILL_MINUTES = int(os.environ.get('GAMIFICATION_REFILL_MINUTES', 
 # AWS_S3_FILE_OVERWRITE = False # Do not overwrite files with the same name
 # AWS_DEFAULT_ACL = 'public-read' # Make files public by default
 # AWS_S3_REGION_NAME = 'us-east-1' # Optional: Specify a region
+
+# SWAGGER / OpenAPI Configuration
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
+}
