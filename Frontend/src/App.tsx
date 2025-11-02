@@ -26,6 +26,7 @@ import StudyPlan from "./pages/StudyPlan";
 import Trilha from "./pages/Trilha";
 import PrivateRoute from "./components/PrivateRoute";
 import { GamificationProvider } from "@/hooks/useGamification";
+import FloatingTrilhaButton from "@/components/FloatingTrilhaButton";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <GamificationProvider>
           <Header />
+          <FloatingTrilhaButton />
           <div className="min-h-screen flex flex-col justify-between pt-20">
             <main className="flex-1">
               <Routes>

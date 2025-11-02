@@ -214,6 +214,7 @@ const Game = () => {
           setPendingScore(0);
           setPendingXp(0);
           resetHearts();
+          // NÃO redireciona automaticamente - aguarda ação do usuário
         }
       }
     };
@@ -334,20 +335,28 @@ const Game = () => {
           )}
           <div className="flex flex-col gap-4 mt-8">
             {playerWon && (
-              <Button variant="game" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="flex-1">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {isTrailGame ? 'Voltar para a Trilha' : 'Ver outras matérias'}
-              </Button>
+              <>
+                <Button variant="game" onClick={() => navigate('/dashboard')} className="w-full">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button variant="outline" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="w-full">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Próximo Quiz
+                </Button>
+              </>
             )}
-            <Button variant={playerLost ? "game" : "outline"} onClick={resetGame} className="w-full">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Tentar Novamente
-            </Button>
             {playerLost && (
-              <Button variant="outline" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="w-full">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {isTrailGame ? 'Voltar para a Trilha' : 'Voltar'}
-              </Button>
+              <>
+                <Button variant="game" onClick={() => navigate('/dashboard')} className="w-full">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button variant="outline" onClick={() => navigate(isTrailGame ? '/trilha' : '/subjects')} className="w-full">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {isTrailGame ? 'Voltar para a Trilha' : 'Voltar'}
+                </Button>
+              </>
             )}
           </div>
         </GameCard>
