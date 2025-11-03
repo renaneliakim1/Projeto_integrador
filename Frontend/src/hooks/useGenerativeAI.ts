@@ -1,0 +1,137 @@
+import { useState, useEffect, useCallback } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+interface Question {
+  id: number;
+  question: string;
+  options: string[];
+  correct: number;
+  difficulty: string;
+}
+
+const API_KEY = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY;
+const DEFAULT_MODEL = "gemini-2.5-flash";
+
+export const useGenerativeAI = (
+  subject: string,
+  educationalLevel: string,
+  nivel: number = 1, // Nível de dificuldade da trilha (1 a 30)
+  modelName: string = DEFAULT_MODEL
+) => {
+  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generateContent = useCallback(async () => {
+    if (!API_KEY) {
+      setError(
+        "Google Generative Language API Key não está definida. Configure VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY no .env."
+      );
+      return;
+    }
+    if (!subject || !educationalLevel) {
+      setGeneratedQuestions([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+  try {
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      const prompt = `Gere 15 perguntas de múltipla escolha sobre "${subject}" para um estudante com nível de escolaridade "${educationalLevel}".
+O nível de dificuldade das perguntas deve ser proporcional ao nível do usuário na trilha, que é ${nivel} de 30. Nível 1 é o mais fácil e 30 o mais difícil.
+Cada pergunta deve ter 4 opções e indicar a opção correta (índice 0-3).
+Atribua também um nível de dificuldade descritivo (fácil, médio, difícil) a cada pergunta, correspondendo à dificuldade ${nivel}/30.
+A saída deve ser um array JSON de objetos, cada um com os campos 'id', 'question', 'options', 'correct' e 'difficulty'.
+Certifique-se de que a resposta seja um JSON válido e nada mais.`;
+
+      const result = await model.generateContent(prompt);
+
+      let text = "";
+      if (result?.response?.text) {
+        text = result.response.text();
+      } else if (result?.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = result.response.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error("Resposta da API vazia ou em formato inesperado.");
+      }
+
+      let parsedQuestions: Question[] = [];
+      try {
+        const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          parsedQuestions = JSON.parse(jsonMatch[1]);
+        } else {
+          parsedQuestions = JSON.parse(text);
+        }
+      } catch (parseError) {
+        setError(
+          `A IA retornou um formato inesperado. Resposta bruta: ${text.slice(0,300)}...`
+        );
+        setGeneratedQuestions([]);
+        return;
+      }
+
+      const formattedQuestions = parsedQuestions.map((q, index) => ({
+        id: index + 1,
+        question: q.question,
+        options: q.options,
+        correct: q.correct,
+        difficulty: q.difficulty || "medium",
+      }));
+
+      setGeneratedQuestions(formattedQuestions);
+    } catch (err: unknown) {
+      let msg = "Erro desconhecido";
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message?: unknown }).message === "string"
+      ) {
+        msg = (err as { message: string }).message;
+      }
+      if (msg.includes("404") || msg.includes("not found")) {
+        msg =
+          "Modelo não encontrado ou não habilitado para sua chave. Verifique o nome do modelo e permissões da API no Google Cloud Console.";
+      }
+      setError(`Falha ao gerar perguntas: ${msg}`);
+      // Em modo de desenvolvimento, fornece perguntas de fallback para permitir
+      // que a UI seja testada mesmo sem a chave ou quando a API falhar.
+      if (import.meta.env.DEV) {
+        console.warn("useGenerativeAI: usando perguntas de fallback de desenvolvimento devido a erro:", msg);
+        const fallback = [
+          {
+            id: 1,
+            question: `Pergunta de fallback: o que é ${subject}?`,
+            options: ["Opção A", "Opção B", "Opção C", "Opção D"],
+            correct: 0,
+            difficulty: "easy",
+          },
+          {
+            id: 2,
+            question: `Pergunta de fallback: qual é o conceito básico de ${subject}?`,
+            options: ["A", "B", "C", "D"],
+            correct: 1,
+            difficulty: "medium",
+          },
+        ];
+        setGeneratedQuestions(fallback);
+      } else {
+        setGeneratedQuestions([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [subject, educationalLevel, nivel, modelName]);
+
+  useEffect(() => {
+    generateContent();
+  }, [generateContent]);
+
+  return { generatedQuestions, loading, error, refetch: generateContent };
+};

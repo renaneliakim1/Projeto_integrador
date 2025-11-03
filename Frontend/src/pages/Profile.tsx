@@ -3,293 +3,384 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  ArrowLeft, 
-  Trophy, 
-  Target, 
-  Clock, 
-  TrendingUp, 
-  Calendar,
-  Award,
-  Star,
-  BookOpen,
-  Calculator,
-  Atom,
-  Globe,
-  Palette
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import * as LucideIcons from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useGamification } from '@/hooks/useGamification';
+import { useToast } from "@/hooks/use-toast";
+import apiClient from "@/api/axios";
+import { useAuth } from "@/contexts/AuthContext";
 
-const userStats = {
-  name: "João Silva",
-  email: "joao.silva@email.com",
-  avatar: "",
-  joinDate: "Janeiro 2024",
-  totalGames: 127,
-  totalScore: 45680,
-  avgAccuracy: 78,
-  streak: 12,
-  level: 8,
-  xp: 2340,
-  nextLevelXp: 3000
+// Tipagem para os dados que esperamos do backend
+interface UserProfileData {
+  birth_date: string;
+  educational_level: string;
+  profession: string;
+  focus: string;
+  foto: string | null;
+}
+interface UserData {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  profile: UserProfileData;
+  date_joined: string; // Data de criação da conta
+}
+
+// Componente dinâmico para ícones
+const Icon = ({ name, ...props }: { name: string } & LucideIcons.LucideProps) => {
+  const LucideIcon = LucideIcons[name as keyof typeof LucideIcons];
+  if (!LucideIcon) return <LucideIcons.HelpCircle {...props} />; // Ícone padrão
+  return <LucideIcon {...props} />;
 };
 
-const subjectStats = [
-  {
-    id: "matematica",
-    name: "Matemática",
-    icon: Calculator,
-    bestScore: 2450,
-    gamesPlayed: 35,
-    accuracy: 82,
-    avgTime: 45,
-    level: 3,
-    color: "text-blue-600"
-  },
-  {
-    id: "portugues",
-    name: "Português", 
-    icon: BookOpen,
-    bestScore: 1890,
-    gamesPlayed: 28,
-    accuracy: 75,
-    avgTime: 38,
-    level: 2,
-    color: "text-green-600"
-  },
-  {
-    id: "ciencias",
-    name: "Ciências",
-    icon: Atom,
-    bestScore: 3200,
-    gamesPlayed: 22,
-    accuracy: 68,
-    avgTime: 52,
-    level: 4,
-    color: "text-purple-600"
-  },
-  {
-    id: "geografia",
-    name: "Geografia",
-    icon: Globe,
-    bestScore: 1750,
-    gamesPlayed: 18,
-    accuracy: 85,
-    avgTime: 35,
-    level: 2,
-    color: "text-teal-600"
-  },
-  {
-    id: "artes",
-    name: "Artes",
-    icon: Palette,
-    bestScore: 1950,
-    gamesPlayed: 24,
-    accuracy: 72,
-    avgTime: 41,
-    level: 2,
-    color: "text-pink-600"
-  }
-];
-
-const achievements = [
-  { id: 1, name: "Primeiro Jogo", description: "Complete seu primeiro quiz", earned: true },
-  { id: 2, name: "Matemático", description: "1000 pontos em Matemática", earned: true },
-  { id: 3, name: "Sequência de Fogo", description: "Acerte 10 seguidas", earned: true },
-  { id: 4, name: "Velocista", description: "Responda em menos de 10s", earned: false },
-  { id: 5, name: "Especialista", description: "Nível 5 em qualquer matéria", earned: false },
-  { id: 6, name: "Poliglota", description: "Jogue todas as disciplinas", earned: false }
-];
-
-const recentGames = [
-  { subject: "Matemática", score: 1250, date: "Hoje", accuracy: 80 },
-  { subject: "Português", score: 980, date: "Ontem", accuracy: 75 },
-  { subject: "Ciências", score: 1450, date: "2 dias", accuracy: 85 },
-  { subject: "Geografia", score: 890, date: "3 dias", accuracy: 70 },
-];
-
 const Profile = () => {
-  const xpPercentage = (userStats.xp / userStats.nextLevelXp) * 100;
+  const navigate = useNavigate();
+  const {
+    level,
+    xp,
+    blocosCompletos,
+    xpForNextLevel,
+    progressPercentage,
+    allAchievements,
+    unlockedAchievements,
+    addXp,
+    isLoading: isGamificationLoading, // Renomeia para evitar conflito
+  } = useGamification();
+
+  const { toast } = useToast();
+  const { logout } = useAuth();
+
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    email: '',
+    focus: '',
+    photo: null as string | null,
+    joinDate: ''
+  });
+
+  // Função para formatar a data de entrada
+  const formatJoinDate = (dateString: string) => {
+    if (!dateString) return 'Data desconhecida';
+    
+    const date = new Date(dateString);
+    const months = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Fetch inicial dos dados do usuário
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await apiClient.get<UserData>('/users/me/');
+        const { data } = response;
+
+        setUserInfo({
+          name: data.first_name,
+          email: data.email,
+          focus: data.profile.focus,
+          photo: data.profile.foto,
+          joinDate: formatJoinDate(data.date_joined)
+        });
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Event listener para atualizar APENAS após editar perfil
+  useEffect(() => {
+    const handleDataUpdate = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.type === 'profile') {
+        try {
+          const response = await apiClient.get<UserData>('/users/me/');
+          const { data } = response;
+          setUserInfo({
+            name: data.first_name,
+            email: data.email,
+            focus: data.profile.focus,
+            photo: data.profile.foto,
+            joinDate: formatJoinDate(data.date_joined)
+          });
+        } catch (error) {
+          console.error("Erro ao atualizar dados do perfil:", error);
+        }
+      }
+    };
+    window.addEventListener('app:data:updated', handleDataUpdate);
+    return () => window.removeEventListener('app:data:updated', handleDataUpdate);
+  }, []);
+
+  const handleShare = async () => {
+    const profileText = `Meu Perfil Skillio:\nNome: ${userInfo.name}\nNível: ${level}\nXP: ${xp}\nBlocos Completos: ${blocosCompletos?.length || 0}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Meu Perfil Skillio', text: profileText, url: window.location.href });
+        toast({ title: "Perfil compartilhado!" });
+      } catch (error) {
+        toast({ title: "Falha ao compartilhar", variant: "destructive" });
+      }
+    } else {
+      navigator.clipboard.writeText(profileText).then(() => {
+        toast({ title: "Perfil copiado para a área de transferência!" });
+      }).catch(() => {
+        toast({ title: "Falha ao copiar perfil", variant: "destructive" });
+      });
+    }
+  };
+
+  if (isGamificationLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header com botão voltar */}
         <div className="mb-8">
-          <Link to="/">
-            <Button variant="ghost" className="mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar ao Início
+          <Link to="/trilha">
+            <Button variant="ghost" className="mb-6 hover:bg-primary/10">
+              <LucideIcons.ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para a Trilha
             </Button>
           </Link>
-          
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-2">
               Meu{" "}
-              <span className="bg-gradient-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Perfil
               </span>
             </h1>
+            <p className="text-muted-foreground">Veja seu progresso e conquistas</p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {/* Profile Info */}
-          <div className="lg:col-span-1 space-y-6">
-            <GameCard variant="subject" className="p-6 text-center">
-              <Avatar className="w-24 h-24 mx-auto mb-4">
-                <AvatarImage src={userStats.avatar} />
-                <AvatarFallback className="text-2xl">
-                  {userStats.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              
-              <h2 className="text-2xl font-bold mb-2">{userStats.name}</h2>
-              <p className="text-muted-foreground mb-4">{userStats.email}</p>
-              
-              <div className="flex justify-center items-center space-x-2 mb-4">
-                <Star className="h-5 w-5 text-warning" />
-                <span className="text-lg font-bold">Nível {userStats.level}</span>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>XP: {userStats.xp}</span>
-                  <span>{userStats.nextLevelXp}</span>
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Card Principal do Perfil */}
+          <GameCard className="p-8 relative overflow-hidden">
+            {/* Decoração de fundo */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full blur-3xl -z-10" />
+            
+            <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+              {/* Avatar e Info Básica */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative group">
+                  <Avatar className="w-32 h-32 border-4 border-primary/20 shadow-xl transition-transform group-hover:scale-105">
+                    <AvatarImage src={userInfo.photo || undefined} />
+                    <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary to-secondary">
+                      {userInfo.name ? userInfo.name.split(' ').map(n => n[0]).join('') : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground rounded-full p-2 shadow-lg">
+                    <LucideIcons.Star className="h-5 w-5" />
+                  </div>
                 </div>
-                <Progress value={xpPercentage} className="h-2" />
+                
+                <Badge variant="secondary" className="text-sm">
+                  <LucideIcons.Calendar className="h-3 w-3 mr-1" />
+                  Membro desde {userInfo.joinDate}
+                </Badge>
               </div>
-              
-              <Badge variant="secondary" className="mt-4">
-                <Calendar className="h-3 w-3 mr-1" />
-                Membro desde {userStats.joinDate}
-              </Badge>
+
+              {/* Informações Detalhadas */}
+              <div className="flex-1 space-y-6 w-full">
+                <div className="text-center md:text-left">
+                  <h2 className="text-3xl font-bold mb-1">
+                    {userInfo.name ? userInfo.name.charAt(0).toUpperCase() + userInfo.name.slice(1) : 'Usuário'}
+                  </h2>
+                  <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2">
+                    <LucideIcons.Mail className="h-4 w-4" />
+                    {userInfo.email}
+                  </p>
+                </div>
+
+                {/* Foco de Estudo */}
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <LucideIcons.Target className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">Foco de Estudo</span>
+                  </div>
+                  <p className="text-lg font-bold text-primary">
+                    {userInfo.focus || 'Não informado'}
+                  </p>
+                </div>
+
+                {/* Nível e Progresso */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-2">
+                        <LucideIcons.Zap className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nível Atual</p>
+                        <p className="text-2xl font-bold">{level}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">XP Total</p>
+                      <p className="text-2xl font-bold text-primary">{xp.toFixed(0)}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Nível {level} → Nível {level + 1}</span>
+                      <span className="font-mono font-bold">{progressPercentage.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-3" />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{xp.toFixed(0)} XP</span>
+                      <span>{xpForNextLevel} XP</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70" 
+                    onClick={() => navigate('/edit-profile')}
+                  > 
+                    <LucideIcons.Edit className="h-4 w-4 mr-2" /> 
+                    Editar Perfil
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 hover:bg-primary/10" 
+                    onClick={handleShare}
+                  >
+                    <LucideIcons.Share2 className="h-4 w-4 mr-2" /> 
+                    Compartilhar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </GameCard>
+
+          {/* Estatísticas em Grid */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <GameCard className="p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-500/10 rounded-full p-3">
+                  <LucideIcons.BookOpen className="h-6 w-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Blocos Completos</p>
+                  <p className="text-2xl font-bold">{blocosCompletos?.length || 0}</p>
+                </div>
+              </div>
             </GameCard>
 
-            {/* Quick Stats */}
-            <GameCard className="p-6">
-              <h3 className="text-lg font-bold mb-4">Estatísticas Gerais</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total de Jogos</span>
-                  <span className="font-bold">{userStats.totalGames}</span>
+            <GameCard className="p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-500/10 rounded-full p-3">
+                  <LucideIcons.Trophy className="h-6 w-6 text-green-500" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pontuação Total</span>
-                  <span className="font-bold">{userStats.totalScore.toLocaleString()}</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Conquistas</p>
+                  <p className="text-2xl font-bold">
+                    {unlockedAchievements?.length || 0} / {allAchievements?.length || 0}
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Precisão Média</span>
-                  <span className="font-bold">{userStats.avgAccuracy}%</span>
+              </div>
+            </GameCard>
+
+            <GameCard className="p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="bg-purple-500/10 rounded-full p-3">
+                  <LucideIcons.Flame className="h-6 w-6 text-purple-500" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sequência Atual</span>
-                  <span className="font-bold text-success">{userStats.streak} dias</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Sequência</p>
+                  <p className="text-2xl font-bold">0 dias</p>
                 </div>
               </div>
             </GameCard>
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Subject Performance */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Desempenho por Disciplina</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {subjectStats.map((subject) => {
-                  const Icon = subject.icon;
-                  return (
-                    <GameCard key={subject.id} className="p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                            <Icon className="h-5 w-5 text-primary-foreground" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold">{subject.name}</h3>
-                            <p className="text-xs text-muted-foreground">Nível {subject.level}</p>
-                          </div>
-                        </div>
-                        <Trophy className="h-5 w-5 text-warning" />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span>Melhor Pontuação</span>
-                          <span className="font-bold text-primary">{subject.bestScore}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Jogos</span>
-                          <span>{subject.gamesPlayed}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Precisão</span>
-                          <span>{subject.accuracy}%</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Tempo Médio</span>
-                          <span>{subject.avgTime}s</span>
-                        </div>
-                      </div>
-                      
-                      <Link to={`/game/${subject.id}`}>
-                        <Button variant="game" size="sm" className="w-full mt-4">
-                          Jogar Novamente
-                        </Button>
-                      </Link>
-                    </GameCard>
-                  );
-                })}
+          {/* Seção de Conquistas */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <LucideIcons.Award className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">Conquistas</h2>
               </div>
+              <Badge variant="outline">
+                {unlockedAchievements?.length || 0} / {allAchievements?.length || 0}
+              </Badge>
             </div>
 
-            {/* Achievements */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Conquistas</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {achievements.map((achievement) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allAchievements && allAchievements.map((achievement) => {
+                const isEarned = unlockedAchievements?.includes(achievement.id);
+                return (
                   <GameCard 
                     key={achievement.id} 
-                    className={`p-4 ${achievement.earned ? 'border-success' : 'opacity-60'}`}
+                    className={`p-4 transition-all hover:scale-105 ${
+                      isEarned 
+                        ? 'border-green-500/50 bg-green-500/5 shadow-lg shadow-green-500/10' 
+                        : 'opacity-50 hover:opacity-75'
+                    }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <Award className={`h-8 w-8 ${achievement.earned ? 'text-success' : 'text-muted-foreground'}`} />
-                      <div>
-                        <h3 className="font-bold">{achievement.name}</h3>
-                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                    <div className="flex items-start gap-4">
+                      <div className={`h-14 w-14 flex-shrink-0 flex items-center justify-center rounded-xl transition-all ${
+                        isEarned 
+                          ? 'bg-gradient-to-br from-green-500/20 to-green-600/20 text-green-400' 
+                          : 'bg-muted/50'
+                      }`}>
+                        <Icon name={achievement.icon} className="h-7 w-7" />
                       </div>
-                      {achievement.earned && (
-                        <Badge variant="secondary" className="ml-auto">
-                          Conquistado
-                        </Badge>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold mb-1 truncate">{achievement.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {achievement.description}
+                        </p>
+                        {isEarned && (
+                          <Badge variant="secondary" className="mt-2 bg-green-500/20 text-green-400 border-green-500/30">
+                            <LucideIcons.Check className="h-3 w-3 mr-1" />
+                            Conquistado
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </GameCard>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Games */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Jogos Recentes</h2>
-              <GameCard className="p-6">
-                <div className="space-y-4">
-                  {recentGames.map((game, index) => (
-                    <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                      <div>
-                        <h3 className="font-semibold">{game.subject}</h3>
-                        <p className="text-sm text-muted-foreground">{game.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{game.score} pts</p>
-                        <p className="text-sm text-muted-foreground">{game.accuracy}% precisão</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </GameCard>
+                );
+              })}
             </div>
           </div>
+
+          {/* Ações de Teste (apenas em dev) */}
+          {process.env.NODE_ENV === 'development' && (
+            <GameCard className="p-6 border-dashed border-yellow-500/50 bg-yellow-500/5">
+              <div className="flex items-center gap-2 mb-4">
+                <LucideIcons.Bug className="h-5 w-5 text-yellow-500" />
+                <h3 className="text-lg font-bold">Modo Desenvolvedor</h3>
+              </div>
+              <Button 
+                onClick={() => addXp(50)} 
+                variant="outline"
+                className="w-full sm:w-auto border-yellow-500/50 hover:bg-yellow-500/10"
+              >
+                <LucideIcons.PlusCircle className="h-4 w-4 mr-2" /> 
+                Adicionar 50 XP (Teste)
+              </Button>
+            </GameCard>
+          )}
         </div>
       </div>
     </div>

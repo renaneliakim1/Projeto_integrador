@@ -1,7 +1,8 @@
 import { GameCard } from "@/components/ui/game-card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Trophy, Zap } from "lucide-react";
+import { Clock, Trophy, Zap, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const GamePreview = () => {
   return (
@@ -20,11 +21,11 @@ const GamePreview = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
-                <Clock className="h-6 w-6 text-primary-foreground" />
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="flex flex-col items-center text-center space-y-4 p-6">
+              <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                <Clock className="h-8 w-8 text-primary-foreground" />
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">Tempo Desafiador</h3>
@@ -35,9 +36,9 @@ const GamePreview = () => {
               </div>
             </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-success rounded-full flex items-center justify-center flex-shrink-0">
-                <Trophy className="h-6 w-6 text-success-foreground" />
+            <div className="flex flex-col items-center text-center space-y-4 p-6">
+              <div className="w-16 h-16 bg-gradient-success rounded-full flex items-center justify-center flex-shrink-0">
+                <Trophy className="h-8 w-8 text-success-foreground" />
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">Sistema de Pontuação</h3>
@@ -48,9 +49,9 @@ const GamePreview = () => {
               </div>
             </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-warning rounded-full flex items-center justify-center flex-shrink-0">
-                <Zap className="h-6 w-6 text-warning-foreground" />
+            <div className="flex flex-col items-center text-center space-y-4 p-6">
+              <div className="w-16 h-16 bg-gradient-warning rounded-full flex items-center justify-center flex-shrink-0">
+                <Zap className="h-8 w-8 text-warning-foreground" />
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">Feedback Instantâneo</h3>
@@ -61,41 +62,52 @@ const GamePreview = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="relative">
-            <GameCard variant="subject" className="p-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Pergunta 3 de 10</span>
-                  <span className="text-sm text-muted-foreground">Pontos: 1.250</span>
-                </div>
-                <Progress value={30} className="h-2" />
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-center justify-center w-12 h-12 bg-gradient-warning rounded-full mx-auto mb-4">
-                  <Clock className="h-6 w-6 text-warning-foreground animate-pulse" />
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-warning">15</div>
-                  <div className="text-sm text-muted-foreground">segundos</div>
+        {/* Card de destaque para o Quiz Rápido */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <GameCard className="p-8 bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 border-2 border-primary/20">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+                  <Brain className="h-10 w-10 text-white" />
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-center">
-                  Qual é o resultado de 15 × 8?
+              
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold mb-2">
+                  Teste Seus Conhecimentos Agora!
                 </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-12">A) 120</Button>
-                  <Button variant="outline" className="h-12">B) 140</Button>
-                  <Button variant="outline" className="h-12">C) 110</Button>
-                  <Button variant="outline" className="h-12">D) 130</Button>
+                <p className="text-muted-foreground mb-4">
+                  100 perguntas rápidas de Matemática, Português, História, Geografia e Ciências. 
+                  Sem necessidade de cadastro! Ganhe 10 XP por resposta certa.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <span className="px-3 py-1 bg-primary/10 rounded-full text-sm font-medium">
+                    ✓ Sem cadastro necessário
+                  </span>
+                  <span className="px-3 py-1 bg-primary/10 rounded-full text-sm font-medium">
+                    ✓ 100 perguntas variadas
+                  </span>
+                  <span className="px-3 py-1 bg-primary/10 rounded-full text-sm font-medium">
+                    ✓ Contador de XP
+                  </span>
                 </div>
               </div>
-            </GameCard>
-          </div>
+
+              <div className="flex-shrink-0">
+                <Link to="/quiz-rapido">
+                  <Button 
+                    size="lg" 
+                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-lg px-8"
+                  >
+                    <Zap className="h-5 w-5 mr-2" />
+                    Jogar Agora
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </GameCard>
         </div>
       </div>
     </section>

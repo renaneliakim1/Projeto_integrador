@@ -3,13 +3,13 @@ import Footer from "@/components/Footer";
 import { GameCard } from "@/components/ui/game-card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { subjects } from "@/data/subjects";
 
 const Subjects = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       <main className="pt-20">
         <div className="container mx-auto px-4 py-8">
@@ -60,11 +60,19 @@ const Subjects = () => {
                       </div>
                     </div>
 
-                    <Link to={`/game/${subject.id}`}>
-                      <Button variant="secondary" className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm">
-                        Jogar Agora
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm"
+                      onClick={() => {
+                        const userEmail = localStorage.getItem("userEmail");
+                        if (userEmail && userEmail !== "null" && userEmail !== "undefined") {
+                          navigate(`/game/${subject.id}`);
+                        } else {
+                          navigate("/login");
+                        }
+                      }}>
+                      Jogar Agora
+                    </Button>
                   </div>
                 </GameCard>
               );
@@ -73,7 +81,6 @@ const Subjects = () => {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 };

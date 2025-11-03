@@ -1,9 +1,11 @@
 import { GameCard } from "@/components/ui/game-card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { subjects } from "@/data/subjects";
 
 const SubjectGrid = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-16 px-4 bg-muted/30">
       <div className="container mx-auto">
@@ -45,11 +47,21 @@ const SubjectGrid = () => {
                     </div>
                   </div>
 
-                  <Link to={`/game/${subject.id}`}>
-                    <Button variant="secondary" className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm">
-                      Jogar Agora
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="secondary"
+                    className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm"
+                    onClick={() => {
+                      const userEmail = localStorage.getItem("userEmail");
+                      console.log("User email from localStorage in SubjectGrid:", userEmail);
+                      if (userEmail) {
+                        navigate(`/game/${subject.id}`);
+                      } else {
+                        navigate("/login");
+                      }
+                    }}
+                  >
+                    Jogar Agora
+                  </Button>
                 </div>
               </GameCard>
             );
