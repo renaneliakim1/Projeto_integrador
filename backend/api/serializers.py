@@ -170,7 +170,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'profile', 'performance')
+        fields = ('id', 'username', 'email', 'first_name', 'profile', 'performance', 'date_joined')
 
     def get_performance(self, obj):
         performance_data = []
