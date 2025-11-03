@@ -129,8 +129,9 @@ const Ranking = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user) {
-      const userFocus = localStorage.getItem('userFocus');
+    // Tenta pegar o foco do localStorage mesmo sem login
+    const userFocus = localStorage.getItem('userFocus');
+    if (userFocus) {
       setUserStudyTopic(userFocus);
     }
   }, [user]);
@@ -198,6 +199,7 @@ const Ranking = () => {
     }
   }, [selectedTab]);
 
+  // Username do usuário atual (vazio se não estiver logado)
   const currentUser = user?.username || '';
 
   return (
@@ -221,6 +223,16 @@ const Ranking = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
+          {!user && (
+            <div className="mb-6 text-center">
+              <GameCard className="p-4 bg-primary/5 border-primary/20">
+                <p className="text-sm text-muted-foreground">
+                  💡 <Link to="/register" className="text-primary font-semibold hover:underline">Crie sua conta</Link> para aparecer no ranking e competir com outros jogadores!
+                </p>
+              </GameCard>
+            </div>
+          )}
+          
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
             <div className="relative flex items-center">
                 <Button
