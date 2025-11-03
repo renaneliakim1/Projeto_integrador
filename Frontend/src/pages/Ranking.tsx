@@ -2,12 +2,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getRankingWithCurrentUser, globalRankingData, matematicaRankingData, programacaoRankingData, portuguesRankingData, historiaRankingData, semanalRankingData, geografiaRankingData, cienciasRankingData, artesRankingData, inglesRankingData, filosofiaRankingData, RankedUser } from "@/data/ranking";
+import { useRanking, RankedUser } from "@/hooks/useRanking";
 import { useTopicCategorizer } from "@/hooks/useTopicCategorizer";
-import { ArrowLeft, ArrowRight, Award, Crown, Medal, Star, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, Crown, Medal, Star, Trophy, Loader2 } from "lucide-react";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Ícone para as 3 primeiras posições
 const getPositionIcon = (position: number) => {
@@ -20,14 +21,16 @@ const getPositionIcon = (position: number) => {
 };
 
 // Card de um jogador no ranking
-const RankingCard = ({ player, rank, isCurrentUser }: { player: RankedUser, rank: number, isCurrentUser: boolean }) => (
+const RankingCard = ({ player, isCurrentUser }: { player: RankedUser, isCurrentUser: boolean }) => (
   <GameCard className={`p-4 transition-all ${isCurrentUser ? 'border-2 border-primary shadow-lg' : ''}`}>
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="flex items-center justify-center w-10 h-10 font-bold text-lg">{rank}</div>
+        <div className="flex items-center justify-center w-10 h-10">
+          {getPositionIcon(player.rank)}
+        </div>
         <Avatar className="w-12 h-12">
-          <AvatarImage src={player.avatar} alt={player.name} />
-          <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
+          <AvatarImage src={player.avatar || undefined} alt={player.name} />
+          <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
           <h3 className={`font-bold ${isCurrentUser ? 'text-primary' : ''}`}>{player.name}</h3>
@@ -45,25 +48,56 @@ const RankingCard = ({ player, rank, isCurrentUser }: { player: RankedUser, rank
 );
 
 // Componente que renderiza uma lista de ranking (pódio + resto)
-const RankingList = ({ players, currentUser }: { players: RankedUser[], currentUser: string | null }) => {
-  if (!players || players.length === 0) {
-    return <p className="text-center text-muted-foreground">Nenhum jogador no ranking ainda.</p>;
+const RankingList = ({ 
+  ranking, 
+  loading, 
+  error, 
+  currentUser, 
+  totalUsers 
+}: { 
+  ranking: RankedUser[]
+  loading: boolean
+  error: string | null
+  currentUser: string
+  totalUsers: number
+}) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  const podium = players.slice(0, 3);
-  const rest = players.slice(3);
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>Tentar Novamente</Button>
+      </div>
+    );
+  }
+
+  if (!ranking || ranking.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">Nenhum jogador no ranking ainda.</p>;
+  }
+
+  const podium = ranking.slice(0, 3);
+  const rest = ranking.slice(3);
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground text-center">Total de jogadores: {totalUsers}</p>
+      
       {/* Pódio */}
       {podium.length > 0 && (
         <div className="grid md:grid-cols-3 gap-4 mb-8">
-          {podium.map((player, index) => (
-            <GameCard key={player.id} className={`p-6 text-center border-2 ${index === 0 ? 'border-yellow-400' : index === 1 ? 'border-gray-300' : 'border-amber-500'}`}>
-              <div className="mb-3">{getPositionIcon(index + 1)}</div>
+          {podium.map((player) => (
+            <GameCard key={player.id} className={`p-6 text-center border-2 ${player.rank === 1 ? 'border-yellow-400' : player.rank === 2 ? 'border-gray-300' : 'border-amber-500'}`}>
+              <div className="mb-3">{getPositionIcon(player.rank)}</div>
               <Avatar className="w-20 h-20 mx-auto mb-3">
-                <AvatarImage src={player.avatar} alt={player.name} />
-                <AvatarFallback className="text-2xl">{player.name.substring(0, 2)}</AvatarFallback>
+                <AvatarImage src={player.avatar || undefined} alt={player.name} />
+                <AvatarFallback className="text-2xl">{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <h3 className="font-bold text-lg">{player.name}</h3>
               <p className="text-sm text-muted-foreground">Nível {player.level}</p>
@@ -75,8 +109,12 @@ const RankingList = ({ players, currentUser }: { players: RankedUser[], currentU
 
       {/* Restante do Ranking */}
       <div className="space-y-3">
-        {rest.map((player, index) => (
-          <RankingCard key={player.id} player={player} rank={index + 4} isCurrentUser={currentUser === player.name} />
+        {rest.map((player) => (
+          <RankingCard 
+            key={player.id} 
+            player={player} 
+            isCurrentUser={currentUser === player.name || currentUser === player.username} 
+          />
         ))}
       </div>
     </div>
@@ -84,50 +122,45 @@ const RankingList = ({ players, currentUser }: { players: RankedUser[], currentU
 };
 
 const Ranking = () => {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [userStudyTopic, setUserStudyTopic] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState("global");
+  const { user } = useAuth();
+  const { ranking, loading, error, totalUsers } = useRanking(selectedTab);
+  const [userStudyTopic, setUserStudyTopic] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const userName = localStorage.getItem('userName');
-    setCurrentUser(userName);
-    if (userName) {
+    if (user) {
       const userFocus = localStorage.getItem('userFocus');
       setUserStudyTopic(userFocus);
     }
-  }, []);
+  }, [user]);
 
   const { category: categorizedTopic } = useTopicCategorizer(userStudyTopic || "");
 
   const tabs = useMemo(() => {
-    const educacaoFisicaRankingData: RankedUser[] = [];
-    const ensinoReligiosoRankingData: RankedUser[] = [];
-    const logicaRankingData: RankedUser[] = [];
-
     const bnccSubjects = [
-        { value: "matematica", label: "Matemática", data: getRankingWithCurrentUser(matematicaRankingData) },
-        { value: "portugues", label: "Português", data: getRankingWithCurrentUser(portuguesRankingData) },
-        { value: "geografia", label: "Geografia", data: getRankingWithCurrentUser(geografiaRankingData) },
-        { value: "ciencias", label: "Ciências", data: getRankingWithCurrentUser(cienciasRankingData) },
-        { value: "historia", label: "História", data: getRankingWithCurrentUser(historiaRankingData) },
-        { value: "artes", label: "Artes", data: getRankingWithCurrentUser(artesRankingData) },
-        { value: "ingles", label: "Inglês", data: getRankingWithCurrentUser(inglesRankingData) },
-        { value: "educacao-fisica", label: "Educação Física", data: getRankingWithCurrentUser(educacaoFisicaRankingData) },
-        { value: "ensino-religioso", label: "Ensino Religioso", data: getRankingWithCurrentUser(ensinoReligiosoRankingData) },
+        { value: "matematica", label: "Matemática" },
+        { value: "portugues", label: "Português" },
+        { value: "geografia", label: "Geografia" },
+        { value: "ciencias", label: "Ciências" },
+        { value: "historia", label: "História" },
+        { value: "artes", label: "Artes" },
+        { value: "ingles", label: "Inglês" },
+        { value: "educacao-fisica", label: "Educação Física" },
+        { value: "ensino-religioso", label: "Ensino Religioso" },
     ];
 
     const otherSubjects = [
-        { value: "programacao", label: "Programação", data: getRankingWithCurrentUser(programacaoRankingData) },
-        { value: "filosofia", label: "Filosofia", data: getRankingWithCurrentUser(filosofiaRankingData) },
-        { value: "logica", label: "Lógica", data: getRankingWithCurrentUser(logicaRankingData) },
+        { value: "programacao", label: "Programação" },
+        { value: "filosofia", label: "Filosofia" },
+        { value: "logica", label: "Lógica" },
     ];
 
     const allSubjects = [...bnccSubjects, ...otherSubjects];
 
     const orderedTabs = [
-      { value: "global", label: "Global", data: getRankingWithCurrentUser(globalRankingData) },
-      { value: "semanal", label: "Semanal", data: getRankingWithCurrentUser(semanalRankingData) },
+      { value: "global", label: "Global" },
+      { value: "semanal", label: "Semanal" },
     ];
 
     const userFocusKey = categorizedTopic?.toLowerCase();
@@ -164,6 +197,8 @@ const Ranking = () => {
         scrollContainerRef.current.scrollTo({ left: scrollPosition, behavior: 'smooth' });
     }
   }, [selectedTab]);
+
+  const currentUser = user?.username || '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -225,7 +260,13 @@ const Ranking = () => {
 
             {tabs.map(tab => (
               <TabsContent key={tab.value} value={tab.value} className="mt-6">
-                <RankingList players={tab.data} currentUser={currentUser} />
+                <RankingList 
+                  ranking={ranking}
+                  loading={loading}
+                  error={error}
+                  currentUser={currentUser}
+                  totalUsers={totalUsers}
+                />
               </TabsContent>
             ))}
           </Tabs>

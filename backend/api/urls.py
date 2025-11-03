@@ -2,7 +2,7 @@ from django.urls import path
 from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView, CompleteBlockView, GenerateStudyPlanView
 from .views import LoseHeartView, ResetHeartsView, RefillHeartsView
 from .views import StudyPlanView
-from .views import DeleteAccountView
+from .views import DeleteAccountView, RankingView, get_user_avatar
 
 urlpatterns = [
     path("users/register/", CreateUserView.as_view(), name="register"),
@@ -18,4 +18,6 @@ urlpatterns = [
     path('users/me/study-plan/', StudyPlanView.as_view(), name='study-plan'),
     path('users/me/generate-study-plan/', GenerateStudyPlanView.as_view(), name='generate-study-plan'),
     path('users/me/delete-account/', DeleteAccountView.as_view(), name='delete-account'),
+    path('ranking/', RankingView.as_view(), name='ranking'),
+    path('avatar/<int:user_id>/', get_user_avatar, name='user-avatar'),
 ]

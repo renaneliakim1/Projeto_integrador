@@ -541,3 +541,150 @@ class DeleteAccountView(generics.GenericAPIView):
         user.delete()
 
         return Response({'detail': f'User {username} deleted.'}, status=status.HTTP_200_OK)
+
+
+class RankingView(generics.GenericAPIView):
+    """
+    Endpoint para obter rankings de usuários por XP.
+    Suporta diferentes categorias: global, semanal, e por matéria.
+    """
+    permission_classes = [permissions.AllowAny]
+    
+    def get_avatar_url(self, user, request):
+        """Helper method to safely get avatar URL"""
+        try:
+            if hasattr(user, 'profile') and user.profile and user.profile.foto:
+                # Como foto é BinaryField, retornamos URL para endpoint de avatar
+                return request.build_absolute_uri(f'/api/v1/avatar/{user.id}/')
+        except Exception:
+            pass
+        return None
+
+    def get(self, request, *args, **kwargs):
+        category = request.query_params.get('category', 'global')
+        limit = int(request.query_params.get('limit', 100))
+        
+        # Busca todos os usuários com gamificação
+        users = User.objects.select_related('profile', 'gamification').all()
+        
+        if category == 'semanal':
+            # Ranking da última semana (baseado em activity logs)
+            one_week_ago = timezone.now() - timezone.timedelta(days=7)
+            
+            # Calcula XP ganho na última semana para cada usuário
+            user_weekly_xp = []
+            for user in users:
+                # Verifica se o usuário tem gamification
+                if not hasattr(user, 'gamification'):
+                    continue
+                    
+                # Conta atividades da semana
+                weekly_activities = ActivityLog.objects.filter(
+                    user=user,
+                    date__gte=one_week_ago.date()
+                ).count()
+                
+                # Assume 10 XP por atividade (ajuste conforme sua lógica)
+                weekly_xp = weekly_activities * 10
+                
+                if weekly_xp > 0 or user.gamification.xp > 0:
+                    user_weekly_xp.append({
+                        'id': user.id,
+                        'name': user.first_name or user.username,
+                        'username': user.username,
+                        'avatar': self.get_avatar_url(user, request),
+                        'xp': weekly_xp,
+                        'level': user.gamification.level,
+                        'total_xp': user.gamification.xp
+                    })
+            
+            # Ordena por XP semanal
+            ranking = sorted(user_weekly_xp, key=lambda x: x['xp'], reverse=True)[:limit]
+            
+        elif category != 'global':
+            # Ranking por matéria específica
+            try:
+                subject = Subject.objects.get(name__iexact=category)
+                
+                user_subject_performance = []
+                for user in users:
+                    # Verifica se o usuário tem gamification
+                    if not hasattr(user, 'gamification'):
+                        continue
+                        
+                    try:
+                        performance = UserPerformance.objects.get(user=user, subject=subject)
+                        # XP baseado em acertos (10 XP por acerto)
+                        subject_xp = performance.correct_answers * 10
+                        
+                        if subject_xp > 0:
+                            user_subject_performance.append({
+                                'id': user.id,
+                                'name': user.first_name or user.username,
+                                'username': user.username,
+                                'avatar': self.get_avatar_url(user, request),
+                                'xp': subject_xp,
+                                'level': user.gamification.level,
+                                'correct_answers': performance.correct_answers,
+                                'incorrect_answers': performance.incorrect_answers
+                            })
+                    except UserPerformance.DoesNotExist:
+                        continue
+                
+                # Ordena por XP da matéria
+                ranking = sorted(user_subject_performance, key=lambda x: x['xp'], reverse=True)[:limit]
+                
+            except Subject.DoesNotExist:
+                # Matéria não encontrada, retorna ranking vazio
+                ranking = []
+        
+        else:
+            # Ranking global (por XP total)
+            user_rankings = []
+            for user in users:
+                # Verifica se o usuário tem gamification
+                if not hasattr(user, 'gamification'):
+                    continue
+                    
+                if user.gamification.xp > 0:
+                    user_rankings.append({
+                        'id': user.id,
+                        'name': user.first_name or user.username,
+                        'username': user.username,
+                        'avatar': self.get_avatar_url(user, request),
+                        'xp': user.gamification.xp,
+                        'level': user.gamification.level,
+                        'streak': user.gamification.streak
+                    })
+            
+            # Ordena por XP total
+            ranking = sorted(user_rankings, key=lambda x: x['xp'], reverse=True)[:limit]
+        
+        # Adiciona posição no ranking
+        for index, user_data in enumerate(ranking, start=1):
+            user_data['rank'] = index
+        
+        return Response({
+            'category': category,
+            'ranking': ranking,
+            'total_users': len(ranking)
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_user_avatar(request, user_id):
+    """
+    Endpoint para servir fotos de perfil armazenadas como BinaryField.
+    """
+    try:
+        user = User.objects.get(id=user_id)
+        
+        if hasattr(user, 'profile') and user.profile and user.profile.foto:
+            from django.http import HttpResponse
+            # Retorna a imagem binária como PNG
+            return HttpResponse(user.profile.foto, content_type='image/png')
+        else:
+            # Retorna 404 se não tiver foto
+            return Response({'detail': 'Avatar not found'}, status=status.HTTP_404_NOT_FOUND)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
