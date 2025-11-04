@@ -151,14 +151,40 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_daily_quests(self, obj):
-        # obj is UserProfile instance, so obj.user is the User instance
+        """
+        OTIMIZADO: Reduz queries de N por quest para 2 queries totais:
+        1 query para buscar quests daily
+        1 query para buscar UserQuests do usuário
+        """
         user = obj.user
         today = timezone.now().date()
+        
+        # Busca todas as quests daily em UMA query
         quests = Quest.objects.filter(type='daily')
+        
+        # Busca UserQuests existentes do usuário para hoje em UMA query
+        existing_user_quests = {
+            uq.quest_id: uq 
+            for uq in UserQuest.objects.filter(user=user, quest_date=today).select_related('quest')
+        }
+        
+        # Cria lista de UserQuests (reutiliza existentes ou cria em memória)
         user_quests = []
+        quests_to_create = []
+        
         for quest in quests:
-            user_quest, created = UserQuest.objects.get_or_create(user=user, quest=quest, quest_date=today)
-            user_quests.append(user_quest)
+            if quest.id in existing_user_quests:
+                user_quests.append(existing_user_quests[quest.id])
+            else:
+                # Cria em memória mas não salva ainda (evita query por quest)
+                new_uq = UserQuest(user=user, quest=quest, quest_date=today, is_completed=False)
+                quests_to_create.append(new_uq)
+                user_quests.append(new_uq)
+        
+        # Salva todas as novas quests de uma vez (bulk insert)
+        if quests_to_create:
+            UserQuest.objects.bulk_create(quests_to_create, ignore_conflicts=True)
+        
         serializer = UserQuestSerializer(user_quests, many=True)
         return serializer.data
 
@@ -173,19 +199,35 @@ class UserDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email', 'first_name', 'profile', 'performance', 'date_joined')
 
     def get_performance(self, obj):
+        """
+        OTIMIZADO: Reduz queries de N+1 para apenas 2 queries:
+        1 query para buscar todas as áreas com subjects
+        1 query para buscar todas as performances do usuário
+        """
         performance_data = []
+        
+        # Busca todas as áreas com subjects em UMA query
         areas = AreaBNCC.objects.prefetch_related('subjects').all()
+        
+        # Busca TODAS as performances do usuário em UMA query e cria dict para lookup rápido
+        user_performances = {
+            perf.subject_id: perf 
+            for perf in UserPerformance.objects.filter(user=obj).select_related('subject')
+        }
+        
         for area in areas:
             area_data = {
                 'area_name': area.name,
                 'subjects': []
             }
             for subject in area.subjects.all():
-                performance, created = UserPerformance.objects.get_or_create(user=obj, subject=subject)
+                # Lookup O(1) ao invés de query por matéria
+                performance = user_performances.get(subject.id)
+                
                 subject_data = {
                     'subject_name': subject.name,
-                    'correct_answers': performance.correct_answers,
-                    'incorrect_answers': performance.incorrect_answers,
+                    'correct_answers': performance.correct_answers if performance else 0,
+                    'incorrect_answers': performance.incorrect_answers if performance else 0,
                 }
                 area_data['subjects'].append(subject_data)
             performance_data.append(area_data)

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Trophy, Zap, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { quickQuizQuestions, QuickQuizQuestion } from '@/data/quickQuizQuestions';
 
+
 const QuickQuiz = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -17,9 +18,11 @@ const QuickQuiz = () => {
   const [quizFinished, setQuizFinished] = useState(false);
   const [shuffledQuestions, setShuffledQuestions] = useState<QuickQuizQuestion[]>([]);
 
-  // Embaralha as perguntas ao iniciar
+  // Embaralha as perguntas e seleciona apenas 25 aleatórias ao iniciar
   useEffect(() => {
-    const shuffled = [...quickQuizQuestions].sort(() => Math.random() - 0.5);
+    const shuffled = [...quickQuizQuestions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 25); // Limita a 25 perguntas
     setShuffledQuestions(shuffled);
   }, []);
 
@@ -53,7 +56,9 @@ const QuickQuiz = () => {
   };
 
   const handleRestart = () => {
-    const shuffled = [...quickQuizQuestions].sort(() => Math.random() - 0.5);
+    const shuffled = [...quickQuizQuestions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 25); // Limita a 25 perguntas
     setShuffledQuestions(shuffled);
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);

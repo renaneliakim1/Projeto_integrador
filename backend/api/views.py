@@ -29,8 +29,12 @@ class CreateUserView(generics.CreateAPIView):
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """
-    View para buscar e atualizar os dados do usuário logado.
+    View OTIMIZADA para buscar e atualizar os dados do usuário logado.
     Acessível apenas por usuários autenticados.
+    
+    OTIMIZAÇÕES:
+    - select_related para buscar profile, gamification, achievements em uma query
+    - prefetch_related para buscar daily quests eficientemente
     """
     serializer_class = UserDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -42,8 +46,16 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return context
 
     def get_object(self):
-        # Retorna o usuário associado à requisição atual
-        user = self.request.user
+        # OTIMIZADO: Busca usuário com todas as relações necessárias de uma vez
+        user = User.objects.select_related(
+            'profile',
+            'gamification'
+        ).prefetch_related(
+            'achievements__achievement',
+            'user_quests__quest',
+            'performance__subject__area'
+        ).get(pk=self.request.user.pk)
+        
         return user
 
     def update(self, request, *args, **kwargs):
@@ -545,8 +557,13 @@ class DeleteAccountView(generics.GenericAPIView):
 
 class RankingView(generics.GenericAPIView):
     """
-    Endpoint para obter rankings de usuários por XP.
+    Endpoint OTIMIZADO para obter rankings de usuários por XP.
     Suporta diferentes categorias: global, semanal, e por matéria.
+    
+    OTIMIZAÇÕES:
+    - Usa order_by e slicing para limitar queries ao banco
+    - select_related para evitar queries N+1
+    - Filtra antes de processar (não processa todos os usuários)
     """
     permission_classes = [permissions.AllowAny]
     
@@ -564,16 +581,18 @@ class RankingView(generics.GenericAPIView):
         category = request.query_params.get('category', 'global')
         limit = int(request.query_params.get('limit', 100))
         
-        # Busca todos os usuários com gamificação
-        users = User.objects.select_related('profile', 'gamification').all()
-        
         if category == 'semanal':
             # Ranking da última semana (baseado em activity logs)
             one_week_ago = timezone.now() - timezone.timedelta(days=7)
             
+            # OTIMIZADO: Filtra usuários com atividades na semana ANTES de processar
+            active_users = User.objects.filter(
+                activity_logs__date__gte=one_week_ago.date()
+            ).select_related('profile', 'gamification').distinct()
+            
             # Calcula XP ganho na última semana para cada usuário
             user_weekly_xp = []
-            for user in users:
+            for user in active_users:
                 # Verifica se o usuário tem gamification
                 if not hasattr(user, 'gamification'):
                     continue
@@ -587,7 +606,7 @@ class RankingView(generics.GenericAPIView):
                 # Assume 10 XP por atividade (ajuste conforme sua lógica)
                 weekly_xp = weekly_activities * 10
                 
-                if weekly_xp > 0 or user.gamification.xp > 0:
+                if weekly_xp > 0:
                     user_weekly_xp.append({
                         'id': user.id,
                         'name': user.first_name or user.username,
@@ -606,33 +625,29 @@ class RankingView(generics.GenericAPIView):
             try:
                 subject = Subject.objects.get(name__iexact=category)
                 
-                user_subject_performance = []
-                for user in users:
-                    # Verifica se o usuário tem gamification
-                    if not hasattr(user, 'gamification'):
-                        continue
-                        
-                    try:
-                        performance = UserPerformance.objects.get(user=user, subject=subject)
-                        # XP baseado em acertos (10 XP por acerto)
-                        subject_xp = performance.correct_answers * 10
-                        
-                        if subject_xp > 0:
-                            user_subject_performance.append({
-                                'id': user.id,
-                                'name': user.first_name or user.username,
-                                'username': user.username,
-                                'avatar': self.get_avatar_url(user, request),
-                                'xp': subject_xp,
-                                'level': user.gamification.level,
-                                'correct_answers': performance.correct_answers,
-                                'incorrect_answers': performance.incorrect_answers
-                            })
-                    except UserPerformance.DoesNotExist:
-                        continue
+                # OTIMIZADO: Filtra usuários com performance na matéria ANTES de processar
+                performances = UserPerformance.objects.filter(
+                    subject=subject,
+                    correct_answers__gt=0
+                ).select_related('user', 'user__profile', 'user__gamification').order_by('-correct_answers')[:limit]
                 
-                # Ordena por XP da matéria
-                ranking = sorted(user_subject_performance, key=lambda x: x['xp'], reverse=True)[:limit]
+                ranking = []
+                for idx, performance in enumerate(performances, start=1):
+                    user = performance.user
+                    # XP baseado em acertos (10 XP por acerto)
+                    subject_xp = performance.correct_answers * 10
+                    
+                    ranking.append({
+                        'id': user.id,
+                        'rank': idx,
+                        'name': user.first_name or user.username,
+                        'username': user.username,
+                        'avatar': self.get_avatar_url(user, request),
+                        'xp': subject_xp,
+                        'level': user.gamification.level if hasattr(user, 'gamification') else 1,
+                        'correct_answers': performance.correct_answers,
+                        'incorrect_answers': performance.incorrect_answers
+                    })
                 
             except Subject.DoesNotExist:
                 # Matéria não encontrada, retorna ranking vazio
@@ -640,29 +655,23 @@ class RankingView(generics.GenericAPIView):
         
         else:
             # Ranking global (por XP total)
-            user_rankings = []
-            for user in users:
-                # Verifica se o usuário tem gamification
-                if not hasattr(user, 'gamification'):
-                    continue
-                    
-                if user.gamification.xp > 0:
-                    user_rankings.append({
-                        'id': user.id,
-                        'name': user.first_name or user.username,
-                        'username': user.username,
-                        'avatar': self.get_avatar_url(user, request),
-                        'xp': user.gamification.xp,
-                        'level': user.gamification.level,
-                        'streak': user.gamification.streak
-                    })
+            # OTIMIZADO: Ordena no banco e limita ANTES de processar
+            top_users = User.objects.filter(
+                gamification__xp__gt=0
+            ).select_related('profile', 'gamification').order_by('-gamification__xp')[:limit]
             
-            # Ordena por XP total
-            ranking = sorted(user_rankings, key=lambda x: x['xp'], reverse=True)[:limit]
-        
-        # Adiciona posição no ranking
-        for index, user_data in enumerate(ranking, start=1):
-            user_data['rank'] = index
+            ranking = []
+            for idx, user in enumerate(top_users, start=1):
+                ranking.append({
+                    'id': user.id,
+                    'rank': idx,
+                    'name': user.first_name or user.username,
+                    'username': user.username,
+                    'avatar': self.get_avatar_url(user, request),
+                    'xp': user.gamification.xp,
+                    'level': user.gamification.level,
+                    'streak': user.gamification.streak
+                })
         
         return Response({
             'category': category,
@@ -693,15 +702,20 @@ def get_user_avatar(request, user_id):
 @api_view(['GET'])
 def get_hero_stats(request):
     """
-    Endpoint para obter estatísticas para a página Hero:
+    Endpoint OTIMIZADO para obter estatísticas para a página Hero:
     - Recorde de XP (usuário com maior XP)
     - Número de jogadores online (usuários ativos nas últimas 24h)
+    
+    OTIMIZAÇÕES:
+    - only() para buscar apenas campos necessários
+    - Limita query a apenas 1 usuário para recorde
+    - Count otimizado com distinct()
     """
     try:
-        # Encontra o usuário com maior XP
-        top_user = User.objects.select_related('gamification', 'profile').filter(
+        # OTIMIZADO: Busca apenas o top 1 com os campos necessários
+        top_user = User.objects.select_related('gamification').filter(
             gamification__isnull=False
-        ).order_by('-gamification__xp').first()
+        ).only('id', 'first_name', 'username', 'gamification__xp').order_by('-gamification__xp').first()
         
         record_holder = None
         record_xp = 0
@@ -710,7 +724,7 @@ def get_hero_stats(request):
             record_holder = top_user.first_name or top_user.username
             record_xp = int(top_user.gamification.xp)
         
-        # Conta usuários ativos nas últimas 24 horas
+        # OTIMIZADO: Count direto com distinct() ao invés de buscar todos os usuários
         last_24_hours = timezone.now() - timezone.timedelta(hours=24)
         online_users = User.objects.filter(
             activity_logs__date__gte=last_24_hours.date()
@@ -781,3 +795,49 @@ def get_public_user(request, user_id):
             'error': 'Usuário não encontrado',
             'detail': str(e)
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def get_user_basic_info(request):
+    """
+    Endpoint LEVE para obter apenas informações básicas do usuário (sem performance).
+    Usado pelo componente Profile para carregamento rápido.
+    
+    OTIMIZADO: Retorna apenas dados essenciais, sem performance de matérias.
+    """
+    try:
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'detail': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Busca dados básicos com select_related
+        user = User.objects.select_related('profile', 'gamification').get(pk=user.pk)
+        
+        foto_url = None
+        if hasattr(user, 'profile') and user.profile and user.profile.foto:
+            foto_url = f"data:image/png;base64,{base64.b64encode(user.profile.foto).decode('utf-8')}"
+        
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name or user.username,
+            'date_joined': user.date_joined.isoformat(),
+            'profile': {
+                'focus': user.profile.focus if hasattr(user, 'profile') and user.profile else None,
+                'foto': foto_url,
+                'educational_level': user.profile.educational_level if hasattr(user, 'profile') and user.profile else None,
+                'profession': user.profile.profession if hasattr(user, 'profile') and user.profile else None,
+            },
+            'gamification': {
+                'level': user.gamification.level if hasattr(user, 'gamification') else 1,
+                'xp': int(user.gamification.xp) if hasattr(user, 'gamification') else 0,
+                'hearts': user.gamification.hearts if hasattr(user, 'gamification') else 5,
+            }
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({
+            'error': 'Erro ao buscar dados básicos',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

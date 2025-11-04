@@ -239,7 +239,7 @@ const EditProfile = () => {
       // Notifica Profile.tsx para atualizar os dados
       window.dispatchEvent(new CustomEvent('app:data:updated', { detail: { type: 'profile' } }));
       
-      navigate("/perfil");
+      navigate("/profile");
 
     } catch (error: any) {
       console.error("Erro ao salvar o perfil:", error);
@@ -293,7 +293,7 @@ const EditProfile = () => {
           </p>
         </div>
         <Card className="p-6 shadow-elevated bg-card/80 backdrop-blur-sm border-border/50 relative">
-          <Link to="/perfil">
+          <Link to="/profile">
             <Button
               variant="outline"
               size="icon"
@@ -416,7 +416,7 @@ const EditProfile = () => {
           </button>
 
           <div className="text-center">
-            <Link to="/perfil" className="text-sm text-muted-foreground hover:text-primary transition-colors">← Voltar para o Perfil</Link>
+            <Link to="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors">← Voltar para o Perfil</Link>
           </div>
         </div>
 

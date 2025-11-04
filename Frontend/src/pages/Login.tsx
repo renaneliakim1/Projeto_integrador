@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,8 +15,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { login } = useAuth();
+  
+  // Obtém o parâmetro redirect da URL
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +47,7 @@ const Login = () => {
         title: "Login realizado!",
         description: "Bem-vindo de volta ao Skillio!",
       });
-      navigate("/dashboard");
+      navigate(redirectTo);
 
     } catch (error: any) {
       let description = "Ocorreu um erro inesperado. Tente novamente.";

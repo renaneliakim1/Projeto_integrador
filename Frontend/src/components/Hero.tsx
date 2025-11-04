@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Play, Trophy, Users, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import mascot from "@/assets/mascot.png";
 import TypedTextWithHighlight from './TypedTextWithHighlight';
 import { useState, useEffect } from 'react';
 import apiClient from '@/api/axios';
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeroStats {
   record: {
@@ -18,6 +19,16 @@ interface HeroStats {
 const Hero = () => {
   const [stats, setStats] = useState<HeroStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleStartPlaying = () => {
+    if (isAuthenticated) {
+      navigate('/trilha');
+    } else {
+      navigate('/login?redirect=/trilha');
+    }
+  };
 
   useEffect(() => {
     const fetchHeroStats = async () => {
@@ -62,14 +73,17 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-              <Link to="/trilha">
-                <Button variant="game" size="lg" className="text-lg px-8">
-                  <Play className="h-5 w-5" />
-                  Começar a Jogar
-                </Button>
-              </Link>
-              <Link to="/quiz-rapido">
-                <Button variant="outline" size="lg" className="text-lg px-8">
+              <Button 
+                variant="game" 
+                size="lg" 
+                className="text-lg px-8 w-full sm:w-auto"
+                onClick={handleStartPlaying}
+              >
+                <Play className="h-5 w-5" />
+                Começar a Jogar
+              </Button>
+              <Link to="/quiz-rapido" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="text-lg px-8 w-full">
                   Quiz Rápido
                 </Button>
               </Link>
@@ -98,7 +112,7 @@ const Hero = () => {
                 alt="EdGame Mascot" 
                 className="w-75 h-75 mx-auto mb-6 object-contain"
               />
-              <div className="space-y-4">
+              <div className="space-y-12">
                 <Link to="/ranking">
                   <GameCard className="p-4 flex items-center justify-between bg-background/20 backdrop-blur-sm hover:bg-background/30 transition-colors cursor-pointer">
                     <div className="flex items-center space-x-3">

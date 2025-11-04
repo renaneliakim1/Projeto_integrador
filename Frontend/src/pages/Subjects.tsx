@@ -5,9 +5,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { subjects } from "@/data/subjects";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Subjects = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handlePlayClick = (subjectId: string) => {
+    if (isAuthenticated) {
+      // Usuário está logado, vai direto para o jogo
+      navigate(`/game/${subjectId}`);
+    } else {
+      // Usuário NÃO está logado, redireciona para login com parâmetro redirect
+      navigate(`/login?redirect=/game/${subjectId}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       
@@ -63,14 +76,7 @@ const Subjects = () => {
                     <Button
                       variant="secondary"
                       className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm"
-                      onClick={() => {
-                        const userEmail = localStorage.getItem("userEmail");
-                        if (userEmail && userEmail !== "null" && userEmail !== "undefined") {
-                          navigate(`/game/${subject.id}`);
-                        } else {
-                          navigate("/login");
-                        }
-                      }}>
+                      onClick={() => handlePlayClick(subject.id)}>
                       Jogar Agora
                     </Button>
                   </div>

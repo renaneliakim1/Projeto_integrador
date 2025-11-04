@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BookOpen, Star, Trophy, User, Flame, Heart, Menu, X } from "lucide-react";
+import { BookOpen, Star, Trophy, User, Flame, Heart, Menu, X, UserCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGamification } from "@/hooks/useGamification";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +15,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const location = useLocation();
@@ -173,25 +179,6 @@ const Header = () => {
                     </div>
                   )}
                   
-                  {/* Botões de autenticação mobile */}
-                  {!isAuthenticated && (
-                    <div className="pt-4 border-t space-y-2">
-                      {location.pathname !== '/login' && (
-                        <Link to="/login" onClick={closeMenu} className="block">
-                          <Button variant="outline" className="w-full">Entrar</Button>
-                        </Link>
-                      )}
-                      {location.pathname !== '/register' && (
-                        <Link to="/register" onClick={closeMenu} className="block">
-                          <Button className="w-full bg-gradient-knowledge">
-                            <User className="h-4 w-4 mr-2" />
-                            Cadastrar
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                  
                   {/* Botão Sair - Mobile */}
                   {isAuthenticated && (
                     <div className="pt-4 border-t">
@@ -289,10 +276,38 @@ const Header = () => {
               </>
             ) : (
               <>
-                {/* Botões de login/cadastro - Desktop apenas */}
-                <div className="hidden lg:flex items-center space-x-2">
+                {/* Botões de login/cadastro - Visíveis acima de 571px */}
+                <div className="hidden min-[571px]:flex items-center space-x-2">
                   {location.pathname !== '/login' && <Link to="/login"><Button variant="outline" size="sm" className="border-primary/50">Entrar</Button></Link>}
                   {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-gradient-knowledge shadow-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>}
+                </div>
+
+                {/* Menu dropdown com ícone de perfil - Visível abaixo de 571px */}
+                <div className="min-[571px]:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <UserCircle className="h-10 w-10" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {location.pathname !== '/login' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/login" className="w-full cursor-pointer">
+                            Entrar
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {location.pathname !== '/register' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/register" className="w-full cursor-pointer">
+                            <User className="h-4 w-4 mr-2" />
+                            Cadastrar
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </>
             )}
