@@ -132,11 +132,18 @@ Para desenvolvimento, você pode executar cada parte separadamente.
    ```
 
 6. **Inicie o servidor:**
+   
+   **Para acesso apenas local:**
    ```bash
    python manage.py runserver
    ```
-
    O backend estará disponível em: http://127.0.0.1:8000
+
+   **Para acesso de dispositivos móveis na mesma rede:**
+   ```bash
+   python manage.py runserver 192.168.0.89:8000
+   ```
+   (Substitua `192.168.0.89` pelo IP do seu computador - descubra com `ipconfig`)
 
 7. **Acesse a documentação da API (Swagger):**
    - **Swagger UI**: http://127.0.0.1:8000/swagger/
@@ -242,6 +249,53 @@ docker run --name skillio-postgres \
 
 - Verifique se o backend está rodando
 - Confirme a URL da API no `.env` do frontend
+
+### Acesso Mobile: ERR_CONNECTION_REFUSED
+
+**Problema comum:** Dispositivos móveis não conseguem acessar o backend mesmo na mesma rede Wi-Fi.
+
+**Causa:** O Django por padrão inicia em `127.0.0.1:8000` (localhost apenas), que não aceita conexões externas. Além disso, firewalls podem bloquear a porta 8000.
+
+**Solução completa:**
+
+1. **Inicie o servidor com IP de rede (ESSENCIAL):**
+   ```bash
+   python manage.py runserver 192.168.0.89:8000
+   ```
+   ⚠️ **NÃO use** apenas `python manage.py runserver` (isso volta para localhost)
+   
+   💡 Use `ipconfig` no CMD para descobrir seu IP local (procure por "Endereço IPv4")
+
+2. **Firewall do Windows:**
+   ```powershell
+   # Execute como Administrador no PowerShell
+   New-NetFirewallRule -DisplayName "Django Backend - Porta 8000" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+   ```
+
+3. **Firewall do Antivírus (Avast, Norton, McAfee, etc.):**
+   - Abra o Avast → **Menu** → **Configurações** → **Proteção** → **Firewall**
+   - Vá em **Regras de pacote** → **Nova regra**
+   - Configure:
+     - Nome: `Django Backend`
+     - Direção: **Entrada**
+     - Protocolo: **TCP**
+     - Porta remota: `Qualquer`
+     - Porta local: `8000`
+     - Ação: **Permitir**
+   
+   **Ou adicione exceção para:** `backend\venv\Scripts\python.exe`
+
+4. **Verifique se está escutando no IP correto:**
+   ```bash
+   netstat -an | findstr :8000
+   ```
+   Deve mostrar conexões com seu IP (ex: 192.168.0.89:8000)
+
+5. **Teste do mobile:**
+   - Frontend: `http://192.168.0.89:8080`
+   - Backend: `http://192.168.0.89:8000`
+
+💡 **Dica:** Use o arquivo `backend\start_server.bat` e escolha opção [2] para iniciar automaticamente no modo rede!
 
 ## 📖 Documentação da API (Swagger)
 
