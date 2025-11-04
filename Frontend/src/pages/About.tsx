@@ -115,7 +115,7 @@ const About = () => {
                 const Icon = feature.icon;
                 return (
                   <Card key={index} className="p-6 text-center hover:shadow-elevated transition-shadow bg-card/80 backdrop-blur-sm">
-                    <div className={`mx-auto w-16 h-16 bg-gradient-${feature.color} rounded-full flex items-center justify-center mb-4 shadow-${feature.color === 'knowledge' ? 'glow' : feature.color === 'growth' ? 'green-glow' : feature.color === 'intellect' ? 'golden-glow' : 'purple-glow'}`}>
+                    <div className={`mx-auto w-16 h-16 bg-gradient-${feature.color} rounded-full flex items-center justify-center mb-4 shadow-${feature.color === 'knowledge' ? 'glow' : feature.color === 'growth' ? 'cyan-glow' : feature.color === 'intellect' ? 'golden-glow' : 'orange-glow'}`}>
                       <Icon className="h-8 w-8 text-white" />
                     </div>
                     <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
@@ -151,17 +151,17 @@ const About = () => {
               </div>
 
               <div className="text-center">
-                <div className="mx-auto w-20 h-20 bg-gradient-growth rounded-full flex items-center justify-center mb-4 shadow-green-glow">
+                <div className="mx-auto w-20 h-20 bg-gradient-growth rounded-full flex items-center justify-center mb-4 shadow-cyan-glow">
                   <Globe className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-growth">Inclusão</h3>
+                <h3 className="text-xl font-bold mb-3 text-accent">Inclusão</h3>
                 <p className="text-muted-foreground">
                   Educação acessível e de qualidade para todos, independente de origem ou condição.
                 </p>
               </div>
 
               <div className="text-center">
-                <div className="mx-auto w-20 h-20 bg-gradient-wisdom rounded-full flex items-center justify-center mb-4 shadow-purple-glow">
+                <div className="mx-auto w-20 h-20 bg-gradient-wisdom rounded-full flex items-center justify-center mb-4 shadow-orange-glow">
                   <Heart className="h-10 w-10 text-white" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-wisdom">Paixão</h3>

@@ -97,7 +97,7 @@ const Trilha = () => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-primary to-indigo-400 bg-clip-text text-transparent">
+                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-400 via-primary to-orange-500 bg-clip-text text-transparent">
                         Seu Caminho de Aprendizado
                 </motion.h1>
                 <motion.p 
@@ -125,7 +125,7 @@ const Trilha = () => {
                         >
                             <div className="flex items-center gap-4 my-6 w-full max-w-3xl">
                                 <div className="flex-1 h-px bg-white/10"></div>
-                                <h2 className="text-2xl font-bold text-purple-300 shrink-0 px-4">{nivel.titulo}</h2>
+                                <h2 className="text-2xl font-bold text-orange-400 shrink-0 px-4">{nivel.titulo}</h2>
                                 <div className="flex-1 h-px bg-white/10"></div>
                             </div>
 
@@ -167,7 +167,7 @@ const Trilha = () => {
                                                             className="w-full h-full rounded-full object-cover"
                                                         />
                                                         {status === 'completo' && (
-                                                            <div className="absolute inset-0 bg-green-500/70 rounded-full flex items-center justify-center">
+                                                            <div className="absolute inset-0 bg-secondary/70 rounded-full flex items-center justify-center">
                                                                 <Check className="h-10 w-10 text-white" />
                                                             </div>
                                                         )}
@@ -200,13 +200,13 @@ const Trilha = () => {
                                             <Button 
                                                 variant="outline"
                                                 className={`w-32 h-32 rounded-lg flex flex-col gap-2 shadow-lg border-4 transition-all duration-300 bg-gray-800/50 
-                                                    ${isLevelComplete && !isRewardClaimed ? 'border-amber-400 hover:bg-amber-900/40 animate-pulse' : 'border-white/10'}
-                                                    ${isRewardClaimed && 'border-green-500/50'}
+                                                    ${isLevelComplete && !isRewardClaimed ? 'border-warning hover:bg-warning/20 animate-pulse' : 'border-white/10'}
+                                                    ${isRewardClaimed && 'border-secondary/50'}
                                                 `}
                                                 disabled={!isLevelComplete || isRewardClaimed}
                                                 onClick={() => handleClaimReward(nivel.nivel)}
                                             >
-                                                <Gift className={`h-12 w-12 transition-colors ${isLevelComplete && !isRewardClaimed ? 'text-amber-400' : isRewardClaimed ? 'text-green-500' : 'text-gray-500'}`} />
+                                                <Gift className={`h-12 w-12 transition-colors ${isLevelComplete && !isRewardClaimed ? 'text-warning' : isRewardClaimed ? 'text-secondary' : 'text-gray-500'}`} />
                                                 <span className="text-xs font-bold text-gray-300">Reward</span>
                                             </Button>
                                         </motion.div>

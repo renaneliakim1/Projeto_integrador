@@ -140,7 +140,7 @@ const Settings = () => {
             
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-success">85%</div>
+                <div className="text-2xl font-bold text-secondary">85%</div>
                 <div className="text-xs text-secondary-foreground/80">Taxa de Acerto</div>
               </div>
               <div className="text-center">

@@ -135,7 +135,7 @@ const Hero = () => {
                 <Link to="/ranking">
                   <GameCard className="p-4 flex items-center justify-between bg-background/20 backdrop-blur-sm hover:bg-background/30 transition-colors cursor-pointer">
                     <div className="flex items-center space-x-3">
-                      <Users className="h-6 w-6 text-success" />
+                      <Users className="h-6 w-6 text-accent" />
                       {loading ? (
                         <div className="flex items-center space-x-2">
                           <Loader2 className="h-4 w-4 animate-spin" />

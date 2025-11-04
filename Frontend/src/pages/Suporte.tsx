@@ -158,7 +158,7 @@ const Suporte = () => {
 
             <Button
               onClick={handleWhatsAppClick}
-              className="w-full h-24 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg"
+              className="w-full h-24 text-lg bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-white shadow-lg shadow-cyan-glow/20"
             >
               <MessageCircle className="mr-3 h-8 w-8" />
               Chamar no WhatsApp

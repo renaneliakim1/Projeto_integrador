@@ -125,7 +125,7 @@ const PublicProfile = () => {
           <GameCard className="p-8 relative overflow-hidden">
             {/* Decoração de fundo */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl -z-10" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full blur-3xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/15 to-primary/5 rounded-full blur-3xl -z-10" />
             
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
               {/* Avatar e Info Básica */}
@@ -220,10 +220,10 @@ const PublicProfile = () => {
                   return (
                     <GameCard 
                       key={achievement.id} 
-                      className="p-4 transition-all hover:scale-105 border-green-500/50 bg-green-500/5 shadow-lg shadow-green-500/10"
+                      className="p-4 transition-all hover:scale-105 border-secondary/50 bg-secondary/5 shadow-lg shadow-secondary/10"
                     >
                       <div className="flex items-start gap-4">
-                        <div className="h-14 w-14 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 text-green-400">
+                        <div className="h-14 w-14 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/30 text-secondary">
                           <Icon name={achievement.icon} className="h-7 w-7" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -231,7 +231,7 @@ const PublicProfile = () => {
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             {achievement.description}
                           </p>
-                          <Badge variant="secondary" className="mt-2 bg-green-500/20 text-green-400 border-green-500/30">
+                          <Badge variant="secondary" className="mt-2">
                             <LucideIcons.Check className="h-3 w-3 mr-1" />
                             Conquistado
                           </Badge>

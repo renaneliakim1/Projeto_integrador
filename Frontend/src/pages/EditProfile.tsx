@@ -281,7 +281,7 @@ const EditProfile = () => {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-gradient-growth rounded-full shadow-green-glow">
+            <div className="p-3 bg-gradient-wisdom rounded-full shadow-orange-glow">
               <User className="h-8 w-8 text-white" />
             </div>
           </div>

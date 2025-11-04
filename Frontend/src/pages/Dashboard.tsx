@@ -478,8 +478,8 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {dailyQuests && dailyQuests.map(quest => (
-                    <div key={quest.quest.id} className={`flex items-center gap-4 p-3 rounded-lg transition-all ${quest.is_completed ? 'bg-green-500/10' : 'bg-muted/50'}`}>
-                        <Checkbox id={quest.quest.id} checked={quest.is_completed} disabled className="data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500" />
+                    <div key={quest.quest.id} className={`flex items-center gap-4 p-3 rounded-lg transition-all ${quest.is_completed ? 'bg-secondary/10' : 'bg-muted/50'}`}>
+                        <Checkbox id={quest.quest.id} checked={quest.is_completed} disabled className="data-[state=checked]:border-secondary data-[state=checked]:bg-secondary" />
                         <label htmlFor={quest.quest.id} className={`flex-1 text-sm ${quest.is_completed ? 'line-through text-muted-foreground' : ''}`}>
                         {quest.quest.description}
                         </label>

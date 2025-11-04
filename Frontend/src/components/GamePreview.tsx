@@ -11,7 +11,7 @@ const GamePreview = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Como{" "}
-            <span className="bg-gradient-success bg-clip-text text-transparent">
+            <span className="bg-gradient-wisdom bg-clip-text text-transparent">
               Funciona
             </span>
           </h2>
@@ -37,8 +37,8 @@ const GamePreview = () => {
             </div>
 
             <div className="flex flex-col items-center text-center space-y-4 p-6">
-              <div className="w-16 h-16 bg-gradient-success rounded-full flex items-center justify-center flex-shrink-0">
-                <Trophy className="h-8 w-8 text-success-foreground" />
+              <div className="w-16 h-16 bg-gradient-wisdom rounded-full flex items-center justify-center flex-shrink-0">
+                <Trophy className="h-8 w-8 text-secondary-foreground" />
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">Sistema de Pontuação</h3>
@@ -66,10 +66,10 @@ const GamePreview = () => {
 
         {/* Card de destaque para o Quiz Rápido */}
         <div className="mt-16 max-w-4xl mx-auto">
-          <GameCard className="p-8 bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 border-2 border-primary/20">
+          <GameCard className="p-8 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/5 border-2 border-primary/20 hover:border-secondary/30 transition-all">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-gradient-wisdom rounded-full flex items-center justify-center shadow-lg shadow-orange-glow/40">
                   <Brain className="h-10 w-10 text-white" />
                 </div>
               </div>
@@ -99,7 +99,8 @@ const GamePreview = () => {
                 <Link to="/quiz-rapido">
                   <Button 
                     size="lg" 
-                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-lg px-8"
+                    variant="energy"
+                    className="text-lg px-8"
                   >
                     <Zap className="h-5 w-5 mr-2" />
                     Jogar Agora
