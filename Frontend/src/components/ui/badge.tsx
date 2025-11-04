@@ -12,7 +12,7 @@ const badgeVariants = cva(
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/90",
         destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
-        energy: "border-transparent bg-gradient-wisdom text-white hover:shadow-orange-glow/50",
+        energy: "border-transparent bg-gradient-wisdom text-secondary-foreground hover:shadow-glow/50",
       },
     },
     defaultVariants: {

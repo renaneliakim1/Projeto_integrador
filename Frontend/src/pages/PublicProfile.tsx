@@ -169,8 +169,8 @@ const PublicProfile = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-2">
-                        <LucideIcons.Zap className="h-5 w-5 text-white" />
+                      <div className="bg-gradient-warning rounded-full p-2">
+                        <LucideIcons.Zap className="h-5 w-5 text-warning-foreground" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Nível Atual</p>

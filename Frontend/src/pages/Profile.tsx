@@ -237,8 +237,8 @@ const Profile = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-2">
-                        <LucideIcons.Zap className="h-5 w-5 text-white" />
+                      <div className="bg-gradient-warning rounded-full p-2">
+                        <LucideIcons.Zap className="h-5 w-5 text-warning-foreground" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Nível Atual</p>
@@ -314,10 +314,10 @@ const Profile = () => {
               </div>
             </GameCard>
 
-            <GameCard className="p-6 hover:shadow-lg transition-shadow">
+            <GameCard className="p-6 hover:shadow-lg transition-smooth">
               <div className="flex items-center gap-4">
-                <div className="bg-orange-500/10 rounded-full p-3">
-                  <LucideIcons.Flame className="h-6 w-6 text-orange-500" />
+                <div className="bg-secondary/10 rounded-full p-3">
+                  <LucideIcons.Flame className="h-6 w-6 text-secondary" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Sequência</p>

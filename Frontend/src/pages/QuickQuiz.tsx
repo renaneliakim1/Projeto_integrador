@@ -85,8 +85,8 @@ const QuickQuiz = () => {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
           <GameCard className="p-8 text-center space-y-6">
-            <div className="inline-block p-4 rounded-full bg-gradient-to-br from-yellow-400/20 to-orange-500/20">
-              <Trophy className="h-16 w-16 text-yellow-500" />
+            <div className="inline-block p-4 rounded-full bg-warning/10">
+              <Trophy className="h-16 w-16 text-warning" />
             </div>
             
             <div>

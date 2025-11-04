@@ -154,7 +154,7 @@ const Header = () => {
                       {streak > 0 && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Sequência</span>
-                          <div className="flex items-center gap-2 text-sm font-bold text-orange-500">
+                          <div className="flex items-center gap-2 text-sm font-bold text-secondary">
                             <Flame className="w-4 h-4" />
                             <span>{streak} dias</span>
                           </div>
@@ -242,7 +242,7 @@ const Header = () => {
                   {streak > 0 && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1 text-sm font-bold text-orange-500">
+                        <div className="flex items-center gap-1 text-sm font-bold text-secondary">
                           <Flame className="w-4 h-4" />
                           <span>{streak}</span>
                         </div>

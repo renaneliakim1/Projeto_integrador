@@ -97,7 +97,7 @@ const Trilha = () => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-400 via-primary to-orange-500 bg-clip-text text-transparent">
+                    className="text-4xl md:text-5xl font-bold text-gradient-primary">
                         Seu Caminho de Aprendizado
                 </motion.h1>
                 <motion.p 
@@ -125,7 +125,7 @@ const Trilha = () => {
                         >
                             <div className="flex items-center gap-4 my-6 w-full max-w-3xl">
                                 <div className="flex-1 h-px bg-white/10"></div>
-                                <h2 className="text-2xl font-bold text-orange-400 shrink-0 px-4">{nivel.titulo}</h2>
+                                <h2 className="text-2xl font-bold text-secondary shrink-0 px-4">{nivel.titulo}</h2>
                                 <div className="flex-1 h-px bg-white/10"></div>
                             </div>
 
