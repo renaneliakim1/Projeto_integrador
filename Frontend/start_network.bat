@@ -1,6 +1,6 @@
 @echo off
 echo ====================================
-echo  SKILLIO - Backend (Modo Rede)
+echo  SKILLIO - Frontend (Modo Rede)
 echo ====================================
 echo.
 echo Detectando IP da rede local...
@@ -18,12 +18,11 @@ set IP=%IP: =%
 
 echo IP detectado: %IP%
 echo.
-echo Acesse do PC: http://%IP%:8000
-echo Acesse do mobile: http://%IP%:8000
+echo Acesse do PC: http://%IP%:8080
+echo Acesse do mobile: http://%IP%:8080
 echo.
 echo ====================================
 echo.
 
-cd /d c:\Users\RENAN\Downloads\Projeto_integrador\backend
-call venv\Scripts\activate.bat
-python manage.py runserver %IP%:8000
+cd /d c:\Users\RENAN\Downloads\Projeto_integrador\Frontend
+call npm run dev -- --host 0.0.0.0

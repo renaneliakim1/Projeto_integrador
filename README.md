@@ -21,29 +21,68 @@ O projeto é composto por três partes principais:
 
 ## 🚀 Como Executar o Projeto
 
-### ⚡ NOVO! Scripts Automatizados
+### ⚡ Scripts Automatizados (Recomendado)
 
-**A forma mais rápida de iniciar o projeto:**
+Escolha o modo de execução baseado na sua necessidade:
 
-#### Linux/Mac:
-```bash
-./start.sh    # Inicia backend e frontend
-./stop.sh     # Para ambos os servidores
-```
+#### 🏠 Modo Local (Apenas no PC)
 
-#### Windows:
+**Ideal para:** Desenvolvimento local sem acesso externo
+
 ```cmd
-start.bat     # Inicia backend e frontend
-stop.bat      # Para ambos os servidores
+start.bat     # Windows: Inicia backend + frontend (localhost)
+./start.sh    # Linux/Mac: Inicia backend + frontend (localhost)
 ```
 
-Os scripts automaticamente:
-- ✅ Verificam a estrutura do projeto
-- ✅ Liberam as portas necessárias
-- ✅ Iniciam Django (porta 8000) e React (porta 8080)
-- ✅ Exibem logs em tempo real (Linux) ou em janelas separadas (Windows)
+- ✅ Backend: http://localhost:8000
+- ✅ Frontend: http://localhost:8080
+- ✅ Acessível apenas do próprio computador
 
-📖 **Guia completo:** [SCRIPTS_GUIDE.md](./SCRIPTS_GUIDE.md)
+---
+
+#### 📱 Modo Rede (PC + Celular/Tablet)
+
+**Ideal para:** Testar em dispositivos móveis na mesma WiFi
+
+```cmd
+start_network.bat     # Windows: Detecta IP automaticamente
+```
+
+**O que o script faz:**
+- 🔍 Detecta automaticamente o IP da sua rede (ex: 192.168.0.89)
+- 🚀 Inicia backend e frontend acessíveis na rede
+- 📱 Mostra o endereço para acessar no celular
+- ✅ Funciona em qualquer rede (casa, trabalho, cafeteria)
+
+**Exemplo de saída:**
+```
+================================================
+ IP DETECTADO: 192.168.0.89
+================================================
+
+ACESSO:
+  - Backend:  http://192.168.0.89:8000
+  - Frontend: http://192.168.0.89:8080
+
+Use este endereco no navegador do PC e Mobile:
+  http://192.168.0.89:8080
+================================================
+```
+
+**No celular/tablet:** Digite o IP mostrado no navegador (ex: `http://192.168.0.89:8080`)
+
+---
+
+#### 🛑 Para Parar os Servidores
+
+```cmd
+stop.bat      # Windows: Para ambos os servidores
+./stop.sh     # Linux/Mac: Para ambos os servidores
+```
+
+---
+
+📖 **Documentação completa:** [TESTE_REDE.md](./TESTE_REDE.md) - Guia detalhado para teste em rede
 ⚡ **Comandos rápidos:** [QUICK_COMMANDS.md](./QUICK_COMMANDS.md)
 
 ---
@@ -158,21 +197,46 @@ Para desenvolvimento, você pode executar cada parte separadamente.
    ```
 
 6. **Inicie o servidor:**
-   
-   **Para acesso apenas local:**
+
+   ### 🏠 Modo Local (Apenas PC)
    ```bash
    python manage.py runserver
    ```
-   O backend estará disponível em: http://127.0.0.1:8000
+   ✅ Acesse: http://127.0.0.1:8000
+   
+   **Características:**
+   - Acessível apenas do próprio computador
+   - Ideal para desenvolvimento local
+   - Não precisa configurar firewall
 
-   **Para acesso de dispositivos móveis na mesma rede:**
+   ### 📱 Modo Rede (PC + Mobile)
+   
+   **Passo 1 - Descubra seu IP:**
+   ```bash
+   ipconfig          # Windows
+   ifconfig          # Linux/Mac
+   ```
+   Procure por "IPv4" ou "inet" (ex: 192.168.0.89)
+   
+   **Passo 2 - Inicie com o IP:**
    ```bash
    python manage.py runserver 192.168.0.89:8000
    ```
-   (Substitua `192.168.0.89` pelo IP do seu computador - descubra com `ipconfig`)
+   (Substitua pelo seu IP)
+   
+   ✅ Acesse do PC: http://192.168.0.89:8000
+   
+   ✅ Acesse do Mobile: http://192.168.0.89:8000
+   
+   **Características:**
+   - Acessível de qualquer dispositivo na mesma WiFi
+   - Ideal para testes em celular/tablet
+   - **Requer configuração de firewall** (veja seção abaixo)
+
+   **💡 Atalho:** Use o script `backend\start_network.bat` que detecta o IP automaticamente!
 
 7. **Acesse a documentação da API (Swagger):**
-   - **Swagger UI**: http://127.0.0.1:8000/swagger/
+   - **Swagger UI**: http://127.0.0.1:8000/swagger/ (ou use seu IP de rede)
    - **ReDoc**: http://127.0.0.1:8000/redoc/
    - **Schema JSON**: http://127.0.0.1:8000/swagger.json
 
@@ -197,6 +261,8 @@ Para desenvolvimento, você pode executar cada parte separadamente.
    - Configure `VITE_API_BASE_URL=http://localhost:8000`
 
 4. **Inicie o servidor de desenvolvimento:**
+
+   ### 🏠 Modo Local (Apenas PC)
    ```bash
    npm run dev
    ```
@@ -204,8 +270,43 @@ Para desenvolvimento, você pode executar cada parte separadamente.
    ```bash
    bun run dev
    ```
+   
+   ✅ Acesse: http://localhost:5173
+   
+   **Características:**
+   - Acessível apenas do próprio computador
+   - URL padrão do Vite (localhost:5173)
+   - Ideal para desenvolvimento local
 
-   O frontend estará disponível em: http://localhost:5173
+   ### 📱 Modo Rede (PC + Mobile)
+   ```bash
+   npm run dev -- --host 0.0.0.0
+   ```
+   
+   O Vite mostrará algo como:
+   ```
+   ➜  Local:   http://localhost:5173/
+   ➜  Network: http://192.168.0.89:5173/
+   ```
+   
+   ✅ Acesse do PC: http://localhost:5173
+   
+   ✅ Acesse do Mobile: http://192.168.0.89:5173 (use o IP "Network")
+   
+   **Características:**
+   - `--host 0.0.0.0` permite acesso externo
+   - Acessível de qualquer dispositivo na mesma WiFi
+   - Vite mostra automaticamente o IP de rede
+   - Frontend detecta automaticamente o IP do backend (configurado em `axios.ts`)
+
+   **💡 Atalho:** Use o script `Frontend\start_network.bat` para iniciar automaticamente!
+
+   **🔧 Configuração Automática de API:**
+   O frontend detecta automaticamente se está sendo acessado via IP de rede e ajusta a URL da API:
+   - Acesso via `localhost` → API: `http://127.0.0.1:8000`
+   - Acesso via `192.168.x.x` → API: `http://192.168.x.x:8000`
+   
+   (Veja `Frontend/src/api/axios.ts` para detalhes)
 
 ## 📁 Estrutura do Projeto
 
@@ -280,48 +381,125 @@ docker run --name skillio-postgres \
 
 **Problema comum:** Dispositivos móveis não conseguem acessar o backend mesmo na mesma rede Wi-Fi.
 
-**Causa:** O Django por padrão inicia em `127.0.0.1:8000` (localhost apenas), que não aceita conexões externas. Além disso, firewalls podem bloquear a porta 8000.
+**Causa:** O Django por padrão inicia em `127.0.0.1:8000` (localhost apenas), que não aceita conexões externas. Além disso, firewalls podem bloquear as portas 8000 e 8080.
 
-**Solução completa:**
+**✅ Solução Completa (Passo a Passo):**
 
-1. **Inicie o servidor com IP de rede (ESSENCIAL):**
-   ```bash
-   python manage.py runserver 192.168.0.89:8000
-   ```
-   ⚠️ **NÃO use** apenas `python manage.py runserver` (isso volta para localhost)
-   
-   💡 Use `ipconfig` no CMD para descobrir seu IP local (procure por "Endereço IPv4")
+#### 1️⃣ Inicie o servidor no modo REDE (ESSENCIAL)
 
-2. **Firewall do Windows:**
-   ```powershell
-   # Execute como Administrador no PowerShell
-   New-NetFirewallRule -DisplayName "Django Backend - Porta 8000" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
-   ```
+**❌ NÃO faça isso:**
+```bash
+python manage.py runserver        # Só funciona em localhost!
+```
 
-3. **Firewall do Antivírus (Avast, Norton, McAfee, etc.):**
-   - Abra o Avast → **Menu** → **Configurações** → **Proteção** → **Firewall**
-   - Vá em **Regras de pacote** → **Nova regra**
-   - Configure:
-     - Nome: `Django Backend`
-     - Direção: **Entrada**
-     - Protocolo: **TCP**
-     - Porta remota: `Qualquer`
-     - Porta local: `8000`
-     - Ação: **Permitir**
-   
-   **Ou adicione exceção para:** `backend\venv\Scripts\python.exe`
+**✅ FAÇA isso:**
+```bash
+# Descubra seu IP primeiro
+ipconfig   # Windows
+ifconfig   # Linux/Mac
 
-4. **Verifique se está escutando no IP correto:**
-   ```bash
-   netstat -an | findstr :8000
-   ```
-   Deve mostrar conexões com seu IP (ex: 192.168.0.89:8000)
+# Inicie com o IP (ex: 192.168.0.89)
+python manage.py runserver 192.168.0.89:8000
+```
 
-5. **Teste do mobile:**
-   - Frontend: `http://192.168.0.89:8080`
-   - Backend: `http://192.168.0.89:8000`
+**💡 Atalho:** Use o script que detecta o IP automaticamente:
+```bash
+backend\start_network.bat     # Windows
+```
 
-💡 **Dica:** Use o arquivo `backend\start_server.bat` e escolha opção [2] para iniciar automaticamente no modo rede!
+#### 2️⃣ Configure o Firewall do Windows
+
+**Método 1 - PowerShell (Rápido):**
+```powershell
+# Execute como Administrador
+New-NetFirewallRule -DisplayName "Skillio Backend (8000)" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Skillio Frontend (8080)" -Direction Inbound -LocalPort 8080 -Protocol TCP -Action Allow
+```
+
+**Método 2 - Interface Gráfica:**
+1. Painel de Controle → Sistema e Segurança → Firewall do Windows
+2. Configurações Avançadas
+3. Regras de Entrada → Nova Regra
+4. Porta → TCP → `8000,8080`
+5. Permitir Conexão → Nome: "Skillio Dev"
+
+#### 3️⃣ Configure o Firewall do Antivírus (se tiver)
+
+**Avast, Norton, McAfee, etc:**
+
+**Opção A - Liberar Portas:**
+- Abra o Antivírus → Configurações → Firewall → Regras de Pacote
+- Adicione regra:
+  - Nome: `Skillio Dev`
+  - Direção: **Entrada**
+  - Protocolo: **TCP**
+  - Portas: `8000, 8080`
+  - Ação: **Permitir**
+
+**Opção B - Adicionar Exceção ao Executável:**
+- Adicione `backend\venv\Scripts\python.exe` nas exceções
+
+#### 4️⃣ Verifique se está escutando no IP correto
+
+```bash
+netstat -an | findstr :8000
+```
+
+**Deve mostrar:**
+```
+TCP    0.0.0.0:8000           0.0.0.0:0              LISTENING
+TCP    192.168.0.89:8000      ...                    ESTABLISHED
+```
+
+✅ **Correto:** `0.0.0.0:8000` ou `192.168.0.89:8000`
+
+❌ **Errado:** `127.0.0.1:8000` (não aceita conexões externas!)
+
+#### 5️⃣ Teste do celular
+
+**Certifique-se:**
+- ✅ PC e celular na **mesma WiFi**
+- ✅ Backend rodando em: `http://192.168.0.89:8000`
+- ✅ Frontend rodando em: `http://192.168.0.89:8080`
+
+**No navegador do celular:**
+```
+http://192.168.0.89:8080
+```
+
+---
+
+### � Resumo - Comandos para Acesso Mobile
+
+**Opção 1 - Scripts Automáticos (RECOMENDADO):**
+```cmd
+start_network.bat     # Detecta IP e inicia tudo
+```
+
+**Opção 2 - Manual:**
+```bash
+# Backend
+cd backend
+call venv\Scripts\activate.bat
+python manage.py runserver 192.168.0.89:8000
+
+# Frontend (outro terminal)
+cd Frontend
+npm run dev -- --host 0.0.0.0
+```
+
+**Configurar Firewall:**
+```powershell
+# PowerShell como Administrador
+New-NetFirewallRule -DisplayName "Skillio Dev" -Direction Inbound -LocalPort 8000,8080 -Protocol TCP -Action Allow
+```
+
+**No celular:**
+```
+http://192.168.0.89:8080
+```
+
+💡 **Dica Final:** Sempre use `start_network.bat` para evitar esquecer o IP correto!
 
 ## 📖 Documentação da API (Swagger)
 
