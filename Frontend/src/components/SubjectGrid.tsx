@@ -2,6 +2,7 @@ import { GameCard } from "@/components/ui/game-card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { subjects } from "@/data/subjects";
+import { Play } from "lucide-react";
 
 const SubjectGrid = () => {
   const navigate = useNavigate();
@@ -26,43 +27,51 @@ const SubjectGrid = () => {
           {subjects.map((subject) => {
             const Icon = subject.icon;
             return (
-              <GameCard
+              <div
                 key={subject.id}
-                className="p-6 hover:cursor-pointer group bg-card/50 border-border hover:border-primary/50 hover:shadow-elevated backdrop-blur-sm"
+                className="group glass rounded-2xl p-7 hover:cursor-pointer border border-border/50 hover:border-primary/50 hover:shadow-glow transition-smooth hover-lift"
+                onClick={() => {
+                  const userEmail = localStorage.getItem("userEmail");
+                  console.log("User email from localStorage in SubjectGrid:", userEmail);
+                  if (userEmail) {
+                    navigate(`/game/${subject.id}`);
+                  } else {
+                    navigate("/login");
+                  }
+                }}
               >
-                <div className="text-center space-y-4">
-                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform group-hover:bg-primary/20">
-                    <Icon className="h-8 w-8 text-primary" />
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-xl font-bold mb-2 text-foreground">{subject.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      {subject.description}
-                    </p>
-                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
-                      <span>{subject.questions} perguntas</span>
-                      <span>Nível: Médio</span>
+                <div className="flex flex-col h-full space-y-5">
+                  {/* Icon */}
+                  <div className="flex items-center justify-between">
+                    <div className="p-4 rounded-xl bg-gradient-primary/10 group-hover:bg-gradient-primary/20 transition-all duration-300 group-hover:scale-105">
+                      <Icon className="h-8 w-8 text-primary drop-shadow-lg" />
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                      <span>{subject.questions}</span>
+                      <span>perguntas</span>
                     </div>
                   </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 space-y-2">
+                    <h3 className="text-2xl font-bold text-foreground group-hover:text-gradient-primary transition-all">
+                      {subject.name}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {subject.description}
+                    </p>
+                  </div>
 
-                  <Button
-                    variant="outline"
-                    className="w-full group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/50"
-                    onClick={() => {
-                      const userEmail = localStorage.getItem("userEmail");
-                      console.log("User email from localStorage in SubjectGrid:", userEmail);
-                      if (userEmail) {
-                        navigate(`/game/${subject.id}`);
-                      } else {
-                        navigate("/login");
-                      }
-                    }}
-                  >
-                    Jogar Agora
-                  </Button>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                    <span className="text-sm font-medium text-muted-foreground">Nível Médio</span>
+                    <div className="flex items-center gap-2 text-primary font-semibold text-sm group-hover:gap-3 transition-all">
+                      <span>Jogar</span>
+                      <Play className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
                 </div>
-              </GameCard>
+              </div>
             );
           })}
         </div>
