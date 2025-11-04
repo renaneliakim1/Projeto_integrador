@@ -2,11 +2,12 @@ from django.urls import path
 from .views import CreateUserView, UserProfileView, UpdatePerformanceView, ActivityLogView, AddXpView, CompleteQuestView, CompleteBlockView, GenerateStudyPlanView
 from .views import LoseHeartView, ResetHeartsView, RefillHeartsView
 from .views import StudyPlanView
-from .views import DeleteAccountView, RankingView, get_user_avatar, get_hero_stats, get_public_user
+from .views import DeleteAccountView, RankingView, get_user_avatar, get_hero_stats, get_public_user, get_user_basic_info
 
 urlpatterns = [
     path("users/register/", CreateUserView.as_view(), name="register"),
     path("users/me/", UserProfileView.as_view(), name="user-detail"),
+    path("users/me/basic/", get_user_basic_info, name="user-basic-info"),  # Endpoint leve
     path('performance/update/', UpdatePerformanceView.as_view(), name='update-performance'),
     path('activity-log/', ActivityLogView.as_view(), name='activity-log'),
     path('study/gamification/add-xp/', AddXpView.as_view(), name='add-xp'),

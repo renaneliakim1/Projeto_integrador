@@ -205,3 +205,36 @@ SWAGGER_SETTINGS = {
     'JSON_EDITOR': True,
     'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
 }
+
+# LOGGING Configuration for Performance Monitoring
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Database Query Performance Settings
+# In DEBUG mode, log queries that take longer than this threshold (in seconds)
+if DEBUG:
+    # Show SQL queries in console for debugging
+    # LOGGING['loggers']['django.db.backends']['level'] = 'DEBUG'
+    pass

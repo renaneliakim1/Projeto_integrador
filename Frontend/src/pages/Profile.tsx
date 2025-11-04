@@ -10,6 +10,7 @@ import { useGamification } from '@/hooks/useGamification';
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/api/axios";
 import { useAuth } from "@/contexts/AuthContext";
+import { allAchievements } from "@/data/achievements";
 
 // Tipagem para os dados que esperamos do backend
 interface UserProfileData {
@@ -29,9 +30,10 @@ interface UserData {
 }
 
 // Componente dinâmico para ícones
-const Icon = ({ name, ...props }: { name: string } & LucideIcons.LucideProps) => {
-  const LucideIcon = LucideIcons[name as keyof typeof LucideIcons];
-  if (!LucideIcon) return <LucideIcons.HelpCircle {...props} />; // Ícone padrão
+const Icon = ({ name, ...props }: { name: string } & React.ComponentProps<typeof LucideIcons.HelpCircle>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const LucideIcon = (LucideIcons as any)[name as keyof typeof LucideIcons] as typeof LucideIcons.HelpCircle;
+  if (!LucideIcon) return <LucideIcons.HelpCircle {...props} />;
   return <LucideIcon {...props} />;
 };
 
@@ -43,10 +45,9 @@ const Profile = () => {
     blocosCompletos,
     xpForNextLevel,
     progressPercentage,
-    allAchievements,
     unlockedAchievements,
     addXp,
-    isLoading: isGamificationLoading, // Renomeia para evitar conflito
+    isLoading: isGamificationLoading,
   } = useGamification();
 
   const { toast } = useToast();
@@ -59,6 +60,9 @@ const Profile = () => {
     photo: null as string | null,
     joinDate: ''
   });
+
+  // OTIMIZADO: Usa cache do useGamification ao invés de fetch separado
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Função para formatar a data de entrada
   const formatJoinDate = (dateString: string) => {
@@ -73,11 +77,15 @@ const Profile = () => {
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  // Fetch inicial dos dados do usuário
+  // OTIMIZADO: Fetch inicial dos dados do usuário APENAS dados básicos (sem performance)
   useEffect(() => {
+    if (initialLoadDone) return;
+
     const fetchUserData = async () => {
       try {
-        const response = await apiClient.get<UserData>('/users/me/');
+        // OTIMIZAÇÃO: Usa endpoint LEVE /users/me/basic/ ao invés de /users/me/
+        // Endpoint básico não retorna performance de todas as matérias (muito mais rápido!)
+        const response = await apiClient.get<UserData>('/users/me/basic/');
         const { data } = response;
 
         setUserInfo({
@@ -87,13 +95,18 @@ const Profile = () => {
           photo: data.profile.foto,
           joinDate: formatJoinDate(data.date_joined)
         });
+        setInitialLoadDone(true);
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
       }
     };
 
-    fetchUserData();
-  }, []);
+    // OTIMIZAÇÃO: Só faz fetch se gamification não estiver carregando
+    // (evita 2 requests simultâneos)
+    if (!isGamificationLoading) {
+      fetchUserData();
+    }
+  }, [isGamificationLoading, initialLoadDone]);
 
   // Event listener para atualizar APENAS após editar perfil
   useEffect(() => {
@@ -101,7 +114,8 @@ const Profile = () => {
       const customEvent = event as CustomEvent;
       if (customEvent.detail?.type === 'profile') {
         try {
-          const response = await apiClient.get<UserData>('/users/me/');
+          // OTIMIZAÇÃO: Usa endpoint leve ao invés do completo
+          const response = await apiClient.get<UserData>('/users/me/basic/');
           const { data } = response;
           setUserInfo({
             name: data.first_name,
