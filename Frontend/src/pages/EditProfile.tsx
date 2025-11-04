@@ -405,7 +405,7 @@ const EditProfile = () => {
                 </div>
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-growth">Salvar Alterações</Button>
+            <Button type="submit" className="w-full">Salvar Alterações</Button>
           </form>
         </Card>
         <div className="mt-6 space-y-4">

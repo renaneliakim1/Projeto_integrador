@@ -54,28 +54,27 @@ const Subjects = () => {
               return (
                 <GameCard
                   key={subject.id}
-                  variant={subject.variant}
-                  className="p-6 hover:cursor-pointer group"
+                  className="p-6 hover:cursor-pointer group bg-card/50 border-border hover:border-primary/50 hover:shadow-elevated backdrop-blur-sm"
                 >
                   <div className="text-center space-y-4">
-                    <div className="mx-auto w-16 h-16 bg-background/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform backdrop-blur-sm">
-                      <Icon className="h-8 w-8" />
+                    <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform group-hover:bg-primary/20">
+                      <Icon className="h-8 w-8 text-primary" />
                     </div>
                     
                     <div>
-                      <h3 className="text-xl font-bold mb-2">{subject.name}</h3>
-                      <p className="text-current/80 text-sm mb-4">
+                      <h3 className="text-xl font-bold mb-2 text-foreground">{subject.name}</h3>
+                      <p className="text-muted-foreground text-sm mb-4">
                         {subject.description}
                       </p>
-                      <div className="flex justify-between items-center text-sm text-current/70 mb-4">
+                      <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
                         <span>{subject.questions} perguntas</span>
                         <span>Nível: Médio</span>
                       </div>
                     </div>
 
                     <Button
-                      variant="secondary"
-                      className="w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm"
+                      variant="outline"
+                      className="w-full group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/50"
                       onClick={() => handlePlayClick(subject.id)}>
                       Jogar Agora
                     </Button>

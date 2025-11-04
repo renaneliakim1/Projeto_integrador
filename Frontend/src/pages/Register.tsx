@@ -191,7 +191,7 @@ const Register = () => {
                 <input type="checkbox" id="aceitouTermos" checked={aceitouTermos} onChange={e => setAceitouTermos(e.target.checked)} className="form-checkbox h-5 w-5 text-primary rounded border-border/50 focus:ring-2 focus:ring-primary mr-2" disabled={isLoading} />
                 <Label htmlFor="aceitouTermos">Aceito os termos e condições</Label>
               </div>
-              <Button type="submit" className="w-full bg-gradient-growth" disabled={isLoading || !(aceitouTermos && name && email && password && confirmPassword)}>Avançar</Button>
+              <Button type="submit" className="w-full" disabled={isLoading || !(aceitouTermos && name && email && password && confirmPassword)}>Avançar</Button>
               <div className="text-center mt-4"><p className="text-sm text-muted-foreground">Já possui conta? <Link to="/login" className="text-primary hover:underline">Login</Link></p></div>
             </form>
           )}
@@ -216,7 +216,7 @@ const Register = () => {
                 <Label htmlFor="profissao">Profissão <span className="text-muted-foreground">(Opcional)</span></Label>
                 <Input id="profissao" type="text" value={profissao} onChange={e => setProfissao(e.target.value)} placeholder="Sua profissão" disabled={isLoading} />
               </div>
-              <Button type="submit" className="w-full bg-gradient-growth" disabled={isLoading}>Avançar</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>Avançar</Button>
             </form>
           )}
 
@@ -227,7 +227,7 @@ const Register = () => {
                 <Input id="foco" type="text" value={foco} onChange={e => setFoco(e.target.value)} placeholder="Digite seu foco principal (ex: ENEM, Lógica...)" list="opcoesFoco" disabled={isLoading} />
                 <datalist id="opcoesFoco">{opcoesFoco.map((s, i) => <option key={i} value={s} />)}</datalist>
               </div>
-              <Button type="submit" className="w-full bg-gradient-growth" disabled={isLoading}>Avançar</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>Avançar</Button>
             </form>
           )}
 
@@ -238,7 +238,7 @@ const Register = () => {
                 <Input id="foto" type="file" accept="image/*" onChange={handleFotoChange} disabled={isLoading} />
                 {fotoPreview && <img src={fotoPreview} alt="Preview" className="mt-2 w-24 h-24 rounded-full object-cover mx-auto" />}
               </div>
-              <Button type="submit" className="w-full bg-gradient-growth" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? 'Finalizando...' : 'Finalizar Cadastro'}
               </Button>
