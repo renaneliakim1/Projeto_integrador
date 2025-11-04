@@ -21,13 +21,39 @@ O projeto é composto por três partes principais:
 
 ## 🚀 Como Executar o Projeto
 
+### ⚡ NOVO! Scripts Automatizados
+
+**A forma mais rápida de iniciar o projeto:**
+
+#### Linux/Mac:
+```bash
+./start.sh    # Inicia backend e frontend
+./stop.sh     # Para ambos os servidores
+```
+
+#### Windows:
+```cmd
+start.bat     # Inicia backend e frontend
+stop.bat      # Para ambos os servidores
+```
+
+Os scripts automaticamente:
+- ✅ Verificam a estrutura do projeto
+- ✅ Liberam as portas necessárias
+- ✅ Iniciam Django (porta 8000) e React (porta 8080)
+- ✅ Exibem logs em tempo real (Linux) ou em janelas separadas (Windows)
+
+📖 **Guia completo:** [SCRIPTS_GUIDE.md](./SCRIPTS_GUIDE.md)
+⚡ **Comandos rápidos:** [QUICK_COMMANDS.md](./QUICK_COMMANDS.md)
+
+---
+
 ### Pré-requisitos
 
-- **Docker e Docker Compose** (recomendado para execução completa)
 - **Node.js** (v18 ou superior) - para desenvolvimento local do frontend
 - **Python** (3.x) - para desenvolvimento local do backend
-- **PostgreSQL** - banco de dados (incluído no Docker)
-- **Redis** - cache (incluído no Docker)
+- **PostgreSQL** - banco de dados (ou use o RDS da AWS já configurado)
+- **Docker e Docker Compose** (opcional)
 
 ### 📥 Clonando e Baixando o Projeto
 
