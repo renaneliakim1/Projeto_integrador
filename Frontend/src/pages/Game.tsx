@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +12,7 @@ import { subjects } from "@/data/subjects"; // Import subjects
 import { useGamification } from "@/hooks/useGamification";
 import { usePerformance } from "@/hooks/usePerformance";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Question {
   id: number;
@@ -24,10 +25,24 @@ interface Question {
 const Game = () => {
   const { blocoId } = useParams<{ blocoId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const { addXp, completeBlock, isBlockCompleted, loseHeart, hearts, resetHearts, userFocus } = useGamification();
   const { updatePerformance } = usePerformance();
   useTimeTracker(); // Inicia o rastreamento de tempo nesta página
+
+  // Verificação de autenticação - redireciona para login se não estiver autenticado
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login necessário",
+        description: "Você precisa estar logado para jogar.",
+        variant: "destructive",
+      });
+      navigate(`/login?redirect=${location.pathname}`);
+    }
+  }, [isAuthenticated, navigate, location.pathname, toast]);
 
   const trilhaBloco = trilhaPrincipal.flatMap(n => n.blocos).find(b => b.id === blocoId);
   const subjectInfo = subjects.find(s => s.id === blocoId);
@@ -113,19 +128,22 @@ const Game = () => {
     }
     } else {
       setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
-      if (isTrailGame) {
-          if (answerIndex !== null && answerIndex !== -1) { // Apenas erros contam, não pulos ou tempo esgotado
-            setMistakes(prev => prev + 1);
-            // Aguarda a perda de vida para garantir que o estado seja atualizado no header
-            await loseHeart();
-          }
+      
+      // Perde vida em TODOS os tipos de quiz quando erra (não apenas trilha)
+      if (answerIndex !== null && answerIndex !== -1) { // Apenas erros contam, não pulos ou tempo esgotado
+        if (isTrailGame) {
+          setMistakes(prev => prev + 1);
+        }
+        // Aguarda a perda de vida para garantir que o estado seja atualizado no header
+        await loseHeart();
       }
+      
       if (answerIndex === -1) {
         toast({ title: "Tempo esgotado! ⏰", variant: "destructive" });
       } else if (answerIndex === null) { // Pulo
         toast({ title: "Pergunta pulada!", variant: "default" });
       } else {
-        toast({ title: "Incorreto 😔", description: isTrailGame ? "Você perdeu uma vida." : "Resposta incorreta.", variant: "destructive" });
+        toast({ title: "Incorreto 😔", description: "Você perdeu uma vida.", variant: "destructive" });
       }
     }
 
@@ -157,6 +175,18 @@ const Game = () => {
         toast({ title: "Limite de erros atingido!", description: "Você cometeu 5 erros e o quiz foi encerrado.", variant: "destructive" });
     }
   }, [mistakes, isTrailGame, toast]);
+
+  // Monitora as vidas e encerra o jogo quando chegarem a zero
+  useEffect(() => {
+    if (hearts <= 0 && !gameOver) {
+      setGameOver(true);
+      toast({ 
+        title: "Sem vidas!", 
+        description: "Você ficou sem vidas. O quiz foi encerrado.", 
+        variant: "destructive" 
+      });
+    }
+  }, [hearts, gameOver, toast]);
 
   useEffect(() => {
       const handleGameOver = async () => {
