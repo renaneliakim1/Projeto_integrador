@@ -139,7 +139,7 @@ const Hero = () => {
                 <img 
                   src={mascot} 
                   alt="Skillio Mascot" 
-                  className="w-64 h-64 mx-auto object-contain relative z-10 drop-shadow-2xl"
+                  className="w-80 h-80 md:w-96 md:h-96 mx-auto object-contain relative z-10 drop-shadow-2xl"
                 />
               </div>
               

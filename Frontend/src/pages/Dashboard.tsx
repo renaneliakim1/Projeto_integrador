@@ -310,7 +310,7 @@ const Dashboard = () => {
         <div className="flex items-center gap-4">
           <img src={profilePicture} alt="Foto de perfil" className="w-20 h-20 rounded-full border-2 border-primary shadow-glow object-cover" />
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Bem-vindo, {userName}!</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Bem-vindo, <span className="text-primary">{userName}</span>!</h2>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm sm:text-base">
               <span className="flex items-center text-muted-foreground"><Star className="w-4 h-4 mr-1 text-amber-400"/>Nível: <b className="ml-1 text-primary">{level}</b></span>
               <span className="flex items-center text-muted-foreground"><Trophy className="w-4 h-4 mr-1 text-amber-400"/>Pontos: <b className="ml-1 text-primary">{xp} XP</b></span>
@@ -337,7 +337,7 @@ const Dashboard = () => {
               )}
             </>
           )}
-          <Button size="lg" className="bg-gradient-knowledge shadow-glow w-full sm:w-auto" onClick={handleNextExercise}>Próxima Lição</Button>
+          <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow w-full sm:w-auto" onClick={handleNextExercise}>Próxima Lição</Button>
         </div>
       </header>
 

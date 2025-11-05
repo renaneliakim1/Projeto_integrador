@@ -559,7 +559,7 @@ const QuizNivelamento = () => {
                 <div className="text-center">
                     <h2 className="text-2xl font-bold mb-4">Não foi possível carregar o quiz</h2>
                     <p className="text-muted-foreground">Tente novamente mais tarde.</p>
-                    <Button size="lg" className="mt-6 bg-gradient-growth" onClick={() => navigate("/trilha")}>Voltar ao Início</Button>
+                    <Button size="lg" className="mt-6 bg-accent hover:bg-accent/90 text-accent-foreground shadow-cyan-glow" onClick={() => navigate("/trilha")}>Voltar ao Início</Button>
                 </div>
             </Card>
         </div>

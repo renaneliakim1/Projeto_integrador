@@ -111,7 +111,7 @@ const Suporte = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full h-24 text-lg bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg">
+                <Button className="w-full h-24 text-lg bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow">
                   <Mail className="mr-3 h-8 w-8" />
                   Enviar Email
                 </Button>
