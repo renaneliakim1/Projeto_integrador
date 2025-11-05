@@ -78,13 +78,13 @@ const About = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="bg-gradient-knowledge shadow-glow">
+                <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow">
                   <Users className="mr-2 h-5 w-5" />
                   Junte-se a Nós
                 </Button>
               </Link>
               <Link to="/subjects">
-                <Button variant="outline" size="lg" className="border-primary/50">
+                <Button variant="outline" size="lg">
                   <BookOpen className="mr-2 h-5 w-5" />
                   Explorar Disciplinas
                 </Button>
@@ -217,7 +217,7 @@ const About = () => {
               Junte-se a milhares de estudantes que já descobriram uma nova forma de aprender.
             </p>
             <Link to="/register">
-              <Button size="lg" className="bg-gradient-knowledge shadow-glow">
+              <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow">
                 <BookOpen className="mr-2 h-5 w-5" />
                 Começar Agora - É Grátis!
               </Button>

@@ -49,10 +49,13 @@ const Login = () => {
       });
       navigate(redirectTo);
 
-    } catch (error: any) {
+    } catch (error) {
       let description = "Ocorreu um erro inesperado. Tente novamente.";
-      if (error.response && error.response.status === 401) {
-        description = "Credenciais inválidas. Verifique seu email e senha.";
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status: number } };
+        if (axiosError.response?.status === 401) {
+          description = "Credenciais inválidas. Verifique seu email e senha.";
+        }
       }
       toast({
         title: "Erro no login",
@@ -123,7 +126,7 @@ const Login = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-knowledge hover:opacity-90 transition-opacity shadow-glow"
+              className="w-full bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow"
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

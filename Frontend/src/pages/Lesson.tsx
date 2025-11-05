@@ -93,7 +93,7 @@ const Lesson = () => {
         const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(subjectForAI + " aula")}s&key=${YOUTUBE_API_KEY}&type=video&maxResults=3&videoEmbeddable=true&relevanceLanguage=pt`);
         const data = await response.json();
         if (data.items) {
-          const fetchedVideos = data.items.map((item: any) => ({
+          const fetchedVideos = data.items.map((item: { snippet: { title: string }; id: { videoId: string } }) => ({
             title: item.snippet.title,
             url: `https://www.youtube.com/watch?v=${item.id.videoId}`
           }));
@@ -214,7 +214,7 @@ const Lesson = () => {
           </Card>
 
           <div className="text-center">
-            <Button size="lg" className="bg-gradient-knowledge shadow-glow" onClick={() => navigate(`/game/${subjectId}`)}>
+            <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow" onClick={() => navigate(`/game/${subjectId}`)}>
               Iniciar Quiz
             </Button>
           </div>

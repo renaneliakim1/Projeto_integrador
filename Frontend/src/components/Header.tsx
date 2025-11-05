@@ -278,8 +278,8 @@ const Header = () => {
               <>
                 {/* Botões de login/cadastro - Visíveis acima de 571px */}
                 <div className="hidden min-[571px]:flex items-center space-x-2">
-                  {location.pathname !== '/login' && <Link to="/login"><Button variant="outline" size="sm" className="border-primary/50">Entrar</Button></Link>}
-                  {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-gradient-knowledge shadow-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>}
+                  {location.pathname !== '/login' && <Link to="/login"><Button variant="outline" size="sm">Entrar</Button></Link>}
+                  {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>}
                 </div>
 
                 {/* Menu dropdown com ícone de perfil - Visível abaixo de 571px */}
