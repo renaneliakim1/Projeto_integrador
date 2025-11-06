@@ -8,7 +8,7 @@ const gameCardVariants = cva(
     variants: {
       variant: {
         default: "border-border hover:border-primary/50",
-        subject: "border-transparent bg-gradient-primary text-primary-foreground hover:shadow-glow",
+        subject: "border-border bg-card hover:border-primary/50 hover:shadow-lg",
         success: "border-transparent bg-gradient-success text-success-foreground hover:shadow-orange-glow",
         warning: "border-transparent bg-gradient-warning text-warning-foreground hover:shadow-golden-glow",
         game: "border-transparent bg-gradient-game text-primary-foreground hover:shadow-glow",

@@ -13,6 +13,7 @@ import { useGamification } from "@/hooks/useGamification";
 import { usePerformance } from "@/hooks/usePerformance";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface Question {
   id: number;
@@ -110,22 +111,10 @@ const Game = () => {
     // Em jogos de trilha, adiamos a atribuição de XP ao backend até a finalização do bloco
     // (o usuário precisa completar as 15 perguntas do nível para receber o XP do bloco).
     setScore(prevScore => prevScore + 10);
-    if (isTrailGame) {
-      setPendingScore(prev => prev + 10);
-      setPendingXp(prev => prev + 10);  // 10 XP por pergunta certa
-      toast({ title: "Correto! 🎉" });
-    } else {
-      // Para quizzes avulsos (não-trilha), damos XP imediatamente e aguardamos a persistência
-      try {
-        await addXp(10);  // 10 XP por pergunta certa
-        toast({ title: "Correto! 🎉", description: `+10 Pontos, +10 XP` });
-        // sinaliza que houve atualização persistida para que o Dashboard recupere os dados ao voltar
-        sessionStorage.setItem('justFinishedQuiz', 'true');
-      } catch (e) {
-        console.warn('addXp failed (inline question)', e);
-        toast({ title: "Correto! 🎉", description: `+10 Pontos (erro ao persistir XP)` });
-      }
-    }
+    // Acumula XP pendente para salvar apenas ao final do quiz (tanto trilha quanto avulso)
+    setPendingScore(prev => prev + 10);
+    setPendingXp(prev => prev + 10);  // 10 XP por pergunta certa
+    toast({ title: "Correto! 🎉" });
     } else {
       setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
       
@@ -157,8 +146,8 @@ const Game = () => {
       } else {
         setGameOver(true);
       }
-    }, 2000);
-  }, [currentQuestion, questions, addXp, toast, loseHeart, isTrailGame, setPendingScore, setPendingXp]);
+    }, 500);
+  }, [currentQuestion, questions, toast, loseHeart, isTrailGame, setPendingScore, setPendingXp]);
 
   useEffect(() => {
     if (timeLeft > 0 && !showResult && !gameOver && questions.length > 0) {
@@ -203,7 +192,8 @@ const Game = () => {
       }
 
       if (blocoId && isTrailGame) {
-        if (mistakes < 5 && !isBlockCompleted(blocoId)) { // Player won
+        // Verifica se o jogador venceu (menos de 5 erros E ainda tem vidas)
+        if (mistakes < 5 && hearts > 0 && !isBlockCompleted(blocoId)) { // Player won
           // Ao concluir o bloco, persistimos o XP ganho durante o bloco no backend
           let persistenceSucceeded = true;
           if (pendingXp > 0) {
@@ -224,7 +214,7 @@ const Game = () => {
           }
           toast({
             title: "Bloco Concluído!",
-            description: `Parabéns! Você completou o bloco. (${pendingScore} pontos ganhos durante o jogo.)`,
+            description: `Parabéns! Você completou o bloco e ganhou ${pendingXp} XP!`,
           });
           // Marca que finalizou um quiz/jogo para que o Dashboard atualize quando o usuário voltar
           try {
@@ -239,18 +229,35 @@ const Game = () => {
           setTimeout(() => {
             navigate('/trilha');
           }, 2000);
-        } else if (mistakes >= 5) { // Player lost
-          // Descarta os pontos e XP pendentes (não concluiu o bloco)
+        } else if (mistakes >= 5 || hearts <= 0) { // Player lost (por erros ou por falta de vidas)
+          // Descarta TODOS os pontos e XP (não concluiu as 15 perguntas)
           setPendingScore(0);
           setPendingXp(0);
+          setScore(0); // Zera o score na tela
           resetHearts();
+          // NÃO salva XP nem marca como concluído - usuário precisa completar as 15 perguntas
           // NÃO redireciona automaticamente - aguarda ação do usuário
+        }
+      } else if (!isTrailGame) {
+        // Para quizzes avulsos (não-trilha), salva o XP acumulado ao finalizar
+        if (pendingXp > 0) {
+          try {
+            await addXp(pendingXp);
+            sessionStorage.setItem('justFinishedQuiz', 'true');
+            toast({
+              title: "Quiz Finalizado!",
+              description: `Você ganhou ${pendingXp} XP!`,
+            });
+          } catch (e) {
+            console.error('Failed to persist XP for non-trail quiz', e);
+            toast({ title: "Erro ao salvar XP", description: "Não foi possível salvar a experiência no servidor.", variant: 'destructive' });
+          }
         }
       }
     };
 
     handleGameOver();
-  }, [gameOver, blocoId, isTrailGame, completeBlock, isBlockCompleted, navigate, toast, pendingScore, pendingXp, addXp, mistakes, resetHearts, subject, sessionAnswers, updatePerformance]);
+  }, [gameOver, blocoId, isTrailGame, completeBlock, isBlockCompleted, navigate, toast, pendingScore, pendingXp, addXp, mistakes, resetHearts, subject, sessionAnswers, updatePerformance, hearts]);
 
   const resetGame = () => {
       refetch();
@@ -320,8 +327,8 @@ const Game = () => {
   }
 
   if (gameOver) {
-    const playerWon = isTrailGame ? mistakes < 5 : true;
-    const playerLost = isTrailGame && mistakes >= 5;
+    const playerWon = isTrailGame ? (mistakes < 5 && hearts > 0) : true;
+    const playerLost = isTrailGame && (mistakes >= 5 || hearts <= 0);
 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -332,13 +339,45 @@ const Game = () => {
               <h2 className="text-4xl font-bold mb-8 text-foreground">Quiz Encerrado!</h2>
               <div className="space-y-6 mb-8">
                 <div className="bg-red-500/10 border-2 border-red-500/30 p-4 rounded-lg">
-                  <p className="text-xl font-bold text-foreground">
-                    Você cometeu <span className="text-red-500">5 erros</span>
+                  {mistakes >= 5 ? (
+                    <>
+                      <p className="text-xl font-bold text-foreground">
+                        Você cometeu <span className="text-red-500">5 erros</span>
+                      </p>
+                      <p className="text-base text-foreground/80 mt-2">
+                        e perdeu todas as suas chances
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xl font-bold text-foreground">
+                        Você ficou <span className="text-red-500">sem vidas</span>
+                      </p>
+                      <p className="text-base text-foreground/80 mt-2">
+                        e não conseguiu completar o bloco
+                      </p>
+                    </>
+                  )}
+                </div>
+                
+                <div className="bg-red-500/10 border-2 border-red-500/30 p-4 rounded-lg">
+                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    ❌ XP descartado
                   </p>
-                  <p className="text-base text-foreground/80 mt-2">
-                    e perdeu todas as suas chances
+                  <p className="text-sm text-foreground/70 mt-1">
+                    O XP só é salvo ao completar todas as 15 perguntas
                   </p>
                 </div>
+                
+                <div className="bg-yellow-500/10 border-2 border-yellow-500/30 p-4 rounded-lg">
+                  <p className="text-lg font-bold text-foreground">
+                    ⚠️ Bloco não completado
+                  </p>
+                  <p className="text-sm text-foreground/70 mt-1">
+                    Complete todas as 15 perguntas com vidas para desbloquear o próximo bloco!
+                  </p>
+                </div>
+                
                 <p className="text-lg font-semibold text-foreground">
                   💪 Não desanime! Tente novamente e melhore seu desempenho.
                 </p>
@@ -359,8 +398,26 @@ const Game = () => {
             <>
               <Trophy className="h-16 w-16 mx-auto mb-6 text-warning" />
               <h2 className="text-3xl font-bold mb-4">{isTrailGame ? 'Bloco Concluído!' : 'Quiz Finalizado!'}</h2>
-              <p className="text-2xl font-bold my-4">Pontuação Final: {score}</p>
-              <p className="text-muted-foreground mb-4">Parabéns! Continue assim! 🎉</p>
+              {isTrailGame ? (
+                <>
+                  <div className="bg-green-500/10 border-2 border-green-500/30 p-6 rounded-lg mb-6">
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+                      +{pendingXp} XP
+                    </p>
+                    <p className="text-sm text-foreground/70">
+                      {sessionAnswers.correct} de 15 perguntas certas × 10 XP
+                    </p>
+                  </div>
+                  <p className="text-lg text-muted-foreground mb-4">
+                    🎉 Parabéns! Você completou o bloco!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold my-4">XP Final: {score}</p>
+                  <p className="text-muted-foreground mb-4">Parabéns! Continue assim! 🎉</p>
+                </>
+              )}
             </>
           )}
           <div className="flex flex-col gap-4 mt-8">
@@ -417,7 +474,7 @@ const Game = () => {
           <div className="flex justify-between items-center mb-4">
             <span className="text-sm font-medium">Pergunta {currentQuestion + 1} de {questions.length}</span>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">Pontos:</span>
+              <span className="text-sm text-muted-foreground">XP:</span>
               <Badge variant="secondary" className="text-lg font-bold">{score}</Badge>
             </div>
           </div>
@@ -438,15 +495,27 @@ const Game = () => {
             <div className="grid gap-4">
               {question.options.map((option: string, index: number) => {
                 let variant: "default" | "success" | "destructive" = "default";
+                let bgClass = "";
+                
                 if (showResult) {
-                  if (index === question.correct) variant = "success";
-                  else if (index === selectedAnswer) variant = "destructive";
+                  if (index === question.correct) {
+                    variant = "success";
+                    bgClass = "bg-green-500 hover:bg-green-500 text-white border-green-600";
+                  } else if (index === selectedAnswer) {
+                    variant = "destructive";
+                    bgClass = "bg-red-500 hover:bg-red-500 text-white border-red-600";
+                  }
                 }
+                
                 return (
                   <Button
                     key={index}
                     variant={variant === "default" ? "outline" : variant}
-                    className="h-16 text-lg justify-start px-6"
+                    className={cn(
+                      "h-16 text-lg justify-start px-6 transition-all duration-300",
+                      !showResult && "hover:bg-primary/10 hover:border-primary hover:scale-[1.02] hover:shadow-md",
+                      bgClass
+                    )}
                     onClick={() => !showResult && handleAnswer(index)}
                     disabled={showResult}
                   >
