@@ -268,7 +268,7 @@ const Header = () => {
                 {/* Avatar e botão Sair - Visíveis em todas as telas */}
                 <Link to="/profile">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={userProfile?.foto || undefined} />
+                    <AvatarImage src={userProfile?.foto || undefined} className="object-cover" />
                     <AvatarFallback>{userProfile?.first_name ? userProfile.first_name.charAt(0) : 'U'}</AvatarFallback>
                   </Avatar>
                 </Link>
@@ -293,7 +293,8 @@ const Header = () => {
                     <DropdownMenuContent align="end" className="w-48">
                       {location.pathname !== '/login' && (
                         <DropdownMenuItem asChild>
-                          <Link to="/login" className="w-full cursor-pointer">
+                          <Link to="/login" className="w-full cursor-pointer flex items-center">
+                            <UserCircle className="h-4 w-4 mr-2" />
                             Entrar
                           </Link>
                         </DropdownMenuItem>

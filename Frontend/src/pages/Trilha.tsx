@@ -142,6 +142,9 @@ const Trilha = () => {
 
                                 const hasNoHearts = hearts <= 0;
                                 const isDisabled = status === 'bloqueado' || (status === 'desbloqueado' && hasNoHearts && !isCompleto);
+                                
+                                // Apenas o card desbloqueado (não completo) tem borda verde
+                                const isCurrentCard = status === 'desbloqueado' && !hasNoHearts;
 
                                 return (
                                     <motion.div
@@ -156,7 +159,7 @@ const Trilha = () => {
                                             <TooltipTrigger asChild>
                                                 <Button 
                                                     variant={'ghost'}
-                                                    className={`w-28 h-28 p-0 rounded-full transition-opacity ${isDisabled ? 'opacity-60 cursor-not-allowed filter grayscale-[50%]' : ''}`}
+                                                    className={`w-28 h-28 p-0 rounded-xl transition-all ${isDisabled ? 'opacity-30 cursor-not-allowed filter brightness-50' : ''} ${isCurrentCard ? 'ring-2 ring-green-500/50' : ''}`}
                                                     onClick={() => !isDisabled && handleBlockClick(nivel.nivel, bloco.id)}
                                                     disabled={isDisabled}
                                                 >
@@ -164,13 +167,8 @@ const Trilha = () => {
                                                         <img
                                                             src={`/Group ${indiceGlobal + 1}.svg`}
                                                             alt={bloco.titulo}
-                                                            className="w-full h-full rounded-full object-cover"
+                                                            className="w-full h-full rounded-xl object-cover"
                                                         />
-                                                        {status === 'completo' && (
-                                                            <div className="absolute inset-0 bg-secondary/70 rounded-full flex items-center justify-center">
-                                                                <Check className="h-10 w-10 text-white" />
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </Button>
                                             </TooltipTrigger>

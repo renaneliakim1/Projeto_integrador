@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface TypedTextWithHighlightProps {
   text: string;
@@ -17,8 +17,47 @@ const TypedTextWithHighlight: React.FC<TypedTextWithHighlightProps> = ({
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTranslated, setIsTranslated] = useState(false);
+  const hasCheckedRef = useRef(false);
 
+  // Detecta se o Google Translate está ativo
   useEffect(() => {
+    const checkTranslation = () => {
+      const translated = 
+        document.documentElement.classList.contains('translated-ltr') ||
+        document.documentElement.classList.contains('translated-rtl') ||
+        document.body.classList.contains('translated-ltr') ||
+        document.body.classList.contains('translated-rtl');
+      
+      if (translated && !hasCheckedRef.current) {
+        setIsTranslated(true);
+        setDisplayedText(text);
+        setCurrentIndex(text.length);
+        hasCheckedRef.current = true;
+      }
+    };
+
+    // Verifica imediatamente
+    checkTranslation();
+
+    // Monitora mudanças nas classes (quando usuário traduz)
+    const observer = new MutationObserver(checkTranslation);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class']
+    });
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, [text]);
+
+  // Animação de digitação (só roda se NÃO estiver traduzido)
+  useEffect(() => {
+    if (isTranslated) return;
+    
     if (currentIndex < text.length) {
       const timeout = setTimeout(() => {
         setDisplayedText((prev) => prev + text[currentIndex]);
@@ -26,7 +65,7 @@ const TypedTextWithHighlight: React.FC<TypedTextWithHighlightProps> = ({
       }, speed);
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, text, speed]);
+  }, [currentIndex, text, speed, isTranslated]);
 
   const renderText = () => {
     const highlightStartIndex = text.indexOf(highlightWord);

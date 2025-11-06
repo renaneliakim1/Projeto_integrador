@@ -4,7 +4,7 @@ import { Play, Trophy, Users, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import mascot from "@/assets/mascot.png";
 import TypedTextWithHighlight from './TypedTextWithHighlight';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import apiClient from '@/api/axios';
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,8 +19,50 @@ interface HeroStats {
 const Hero = () => {
   const [stats, setStats] = useState<HeroStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Detecta se deve usar animação (monitora mudanças)
+  useEffect(() => {
+    const checkShouldAnimate = () => {
+      // Verifica se Google Translate está ativo
+      const isTranslated = 
+        document.documentElement.classList.contains('translated-ltr') ||
+        document.documentElement.classList.contains('translated-rtl') ||
+        document.body.classList.contains('translated-ltr') ||
+        document.body.classList.contains('translated-rtl');
+      
+      if (isTranslated) {
+        console.log('❌ Google Translate ativo - SEM animação');
+        setShouldAnimate(false);
+        return;
+      }
+      
+      // Verifica idioma do navegador
+      const browserLang = navigator.language.toLowerCase();
+      const isPortuguese = browserLang.startsWith('pt');
+      
+      console.log('🌍 Navegador:', browserLang, '| Animação:', isPortuguese ? 'SIM' : 'NÃO');
+      setShouldAnimate(isPortuguese);
+    };
+
+    // Verifica imediatamente
+    checkShouldAnimate();
+
+    // Monitora mudanças nas classes do documento
+    const observer = new MutationObserver(checkShouldAnimate);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class']
+    });
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleStartPlaying = () => {
     if (isAuthenticated) {
@@ -77,12 +119,18 @@ const Hero = () => {
             
             {/* Title */}
             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
-              <TypedTextWithHighlight
-                text="Aprenda Brincando com o Skillio"
-                highlightWord="Skillio"
-                highlightClassName="text-gradient-primary"
-                speed={75}
-              />
+              {shouldAnimate ? (
+                <TypedTextWithHighlight
+                  text="Aprenda Brincando com o Skillio"
+                  highlightWord="Skillio"
+                  highlightClassName="text-gradient-primary"
+                  speed={75}
+                />
+              ) : (
+                <span>
+                  Aprenda Brincando com o <span className="text-gradient-primary">Skillio</span>
+                </span>
+              )}
             </h1>
             
             {/* Description */}

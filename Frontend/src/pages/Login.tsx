@@ -7,6 +7,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import apiClient from "@/api/axios";
 
 const Login = () => {
@@ -18,6 +19,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { login } = useAuth();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   
   // Obtém o parâmetro redirect da URL
   const redirectTo = searchParams.get('redirect') || '/dashboard';
@@ -33,11 +35,24 @@ const Login = () => {
       return;
     }
 
+    if (!executeRecaptcha) {
+      toast({
+        title: "Erro",
+        description: "reCAPTCHA não está disponível. Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Executa o reCAPTCHA v3
+      const recaptchaToken = await executeRecaptcha('login');
+
       const response = await apiClient.post('/auth/login/', {
         username: email,
         password,
+        recaptcha_token: recaptchaToken, // Envia o token para o backend
       });
       
       const { access, refresh } = response.data;
@@ -52,9 +67,11 @@ const Login = () => {
     } catch (error) {
       let description = "Ocorreu um erro inesperado. Tente novamente.";
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status: number } };
+        const axiosError = error as { response?: { status: number; data?: { detail?: string } } };
         if (axiosError.response?.status === 401) {
           description = "Credenciais inválidas. Verifique seu email e senha.";
+        } else if (axiosError.response?.status === 400 && axiosError.response?.data?.detail) {
+          description = axiosError.response.data.detail;
         }
       }
       toast({

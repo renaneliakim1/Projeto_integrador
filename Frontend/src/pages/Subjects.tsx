@@ -63,10 +63,10 @@ const Subjects = () => {
                       <div className="p-4 rounded-xl bg-gradient-primary/10 group-hover:bg-gradient-primary/20 transition-all duration-300 group-hover:scale-105">
                         <Icon className="h-8 w-8 text-primary drop-shadow-lg" />
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                     {/*  <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
                         <span>{subject.questions}</span>
                         <span>perguntas</span>
-                      </div>
+                      </div>  */} {/* removido a quantidade de perguntas */}
                     </div>
                     
                     {/* Content */}

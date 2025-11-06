@@ -90,14 +90,56 @@ const Lesson = () => {
   
       setIsLoadingVideos(true);
       try {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(subjectForAI + " aula")}s&key=${YOUTUBE_API_KEY}&type=video&maxResults=3&videoEmbeddable=true&relevanceLanguage=pt`);
-        const data = await response.json();
-        if (data.items) {
-          const fetchedVideos = data.items.map((item: { snippet: { title: string }; id: { videoId: string } }) => ({
-            title: item.snippet.title,
-            url: `https://www.youtube.com/watch?v=${item.id.videoId}`
-          }));
-          setVideos(fetchedVideos);
+        // Busca vídeos com termo de busca mais específico e contextualizado
+        // Adiciona palavras-chave para diferenciar contextos (ex: civil, computadores, etc)
+        let searchTerm = `${subjectForAI} aula introdução`;
+        
+        // Contextualizações específicas para evitar ambiguidades
+        const lowerSubject = subjectForAI.toLowerCase();
+        if (lowerSubject.includes('arquitetura') && !lowerSubject.includes('computador')) {
+          searchTerm = `arquitetura civil construção aula introdução`;
+        } else if (lowerSubject.includes('design') && !lowerSubject.includes('web')) {
+          searchTerm = `design gráfico criativo aula introdução`;
+        } else if (lowerSubject.includes('engenharia') && !lowerSubject.includes('software')) {
+          searchTerm = `engenharia civil mecânica aula introdução`;
+        }
+        
+        const searchResponse = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchTerm)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=15&videoEmbeddable=true&relevanceLanguage=pt&videoDuration=medium`);
+        const searchData = await searchResponse.json();
+        
+        if (searchData.items && searchData.items.length > 0) {
+          // Pega os IDs dos vídeos para buscar detalhes (incluindo duração)
+          const videoIds = searchData.items.map((item: { id: { videoId: string } }) => item.id.videoId).join(',');
+          
+          // Busca detalhes dos vídeos (incluindo duração)
+          const detailsResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`);
+          const detailsData = await detailsResponse.json();
+          
+          if (detailsData.items) {
+            // Função para converter duração ISO 8601 (PT5M30S) em segundos
+            const parseISO8601Duration = (duration: string): number => {
+              const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+              if (!match) return 0;
+              const hours = parseInt(match[1] || '0');
+              const minutes = parseInt(match[2] || '0');
+              const seconds = parseInt(match[3] || '0');
+              return hours * 3600 + minutes * 60 + seconds;
+            };
+            
+            // Filtra vídeos entre 3-6 minutos (180-360 segundos)
+            const filteredVideos = detailsData.items
+              .filter((item: { contentDetails: { duration: string } }) => {
+                const durationInSeconds = parseISO8601Duration(item.contentDetails.duration);
+                return durationInSeconds >= 180 && durationInSeconds <= 360;
+              })
+              .map((item: { snippet: { title: string }; id: string }) => ({
+                title: item.snippet.title,
+                url: `https://www.youtube.com/watch?v=${item.id}`
+              }))
+              .slice(0, 3); // Limita a 3 vídeos
+            
+            setVideos(filteredVideos);
+          }
         }
       } catch (error) {
         console.error("Falha ao buscar vídeos do YouTube", error);
