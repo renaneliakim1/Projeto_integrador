@@ -1,35 +1,36 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
-import Index from "./pages/Index";
-import Subjects from "./pages/Subjects";
-import Game from "./pages/Game";
-import Profile from "./pages/Profile";
-import Ranking from "./pages/Ranking";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import About from "./pages/About";
-import NotFound from "./pages/NotFound";
-import TermosCondicoesDetalhado from "./components/TermosCondicoesDetalhado";
-import Header from "@/components/Header";
-import Dashboard from "./pages/Dashboard";
-import QuizNivelamento from "./pages/QuizNivelamento";
-import Footer from "@/components/Footer";
-import Suporte from "./pages/Suporte";
-import Lesson from "./pages/Lesson";
-import EditProfile from "./pages/EditProfile";
-import StudyPlan from "./pages/StudyPlan";
-import Trilha from "./pages/Trilha";
-import QuickQuiz from "./pages/QuickQuiz";
-import PublicProfile from "./pages/PublicProfile";
-import PrivateRoute from "./components/PrivateRoute";
-import { GamificationProvider } from "@/hooks/useGamification";
 import FloatingTrilhaButton from "@/components/FloatingTrilhaButton";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { GamificationProvider } from "@/hooks/useGamification";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import PrivateRoute from "./components/PrivateRoute";
+import RecaptchaLegalNotice from "./components/RecaptchaLegalNotice";
+import TermosCondicoesDetalhado from "./components/TermosCondicoesDetalhado";
+import About from "./pages/About";
+import Dashboard from "./pages/Dashboard";
+import EditProfile from "./pages/EditProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import Game from "./pages/Game";
+import Index from "./pages/Index";
+import Lesson from "./pages/Lesson";
+import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
+import QuickQuiz from "./pages/QuickQuiz";
+import QuizNivelamento from "./pages/QuizNivelamento";
+import Ranking from "./pages/Ranking";
+import Register from "./pages/Register";
+import Settings from "./pages/Settings";
+import StudyPlan from "./pages/StudyPlan";
+import Subjects from "./pages/Subjects";
+import Suporte from "./pages/Suporte";
+import Trilha from "./pages/Trilha";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
+              <RecaptchaLegalNotice />
               <Footer />
             </div>
           </GamificationProvider>

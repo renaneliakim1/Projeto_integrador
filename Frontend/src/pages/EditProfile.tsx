@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import apiClient from '@/api/axios';
 import EducacaoParticles from "@/components/EducacaoParticles";
+import { AnimatedDatePicker } from "@/components/ui/AnimatedDatePicker";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { AnimatedDatePicker } from "@/components/ui/AnimatedDatePicker";
 import { Separator } from "@/components/ui/separator";
-import apiClient from '@/api/axios';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Eye, EyeOff, Loader2, Trash2, User } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { Link, useNavigate } from 'react-router-dom';
 
 // Tipagem para os dados que esperamos do backend
 interface UserProfileData {
@@ -51,6 +52,7 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logout } = useAuth();
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   // Delete account modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -65,7 +67,31 @@ const EditProfile = () => {
       return;
     }
 
+    if (!executeRecaptcha) {
+      toast({
+        title: "Erro",
+        description: "reCAPTCHA não está disponível. Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsDeleting(true);
+
+    try {
+      // Executa o reCAPTCHA v3
+      const recaptchaToken = await executeRecaptcha('delete_account');
+      console.log('reCAPTCHA token gerado para exclusão:', recaptchaToken);
+    } catch (error) {
+      console.error('Erro ao executar reCAPTCHA:', error);
+      toast({
+        title: "Erro de segurança",
+        description: "Falha na verificação reCAPTCHA. Tente novamente.",
+        variant: "destructive",
+      });
+      setIsDeleting(false);
+      return;
+    }
     try {
   await apiClient.post('/users/me/delete-account/', { password: deletePassword });
       setIsAccountDeleted(true);
@@ -131,7 +157,31 @@ const EditProfile = () => {
   };
 
   const handleSave = async () => {
+    if (!executeRecaptcha) {
+      toast({
+        title: "Erro",
+        description: "reCAPTCHA não está disponível. Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+
+    try {
+      // Executa o reCAPTCHA v3
+      const recaptchaToken = await executeRecaptcha('edit_profile');
+      console.log('reCAPTCHA token gerado:', recaptchaToken);
+    } catch (error) {
+      console.error('Erro ao executar reCAPTCHA:', error);
+      toast({
+        title: "Erro de segurança",
+        description: "Falha na verificação reCAPTCHA. Tente novamente.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append('first_name', name);
