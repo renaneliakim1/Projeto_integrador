@@ -106,12 +106,12 @@ const QuickQuiz = () => {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-secondary/10 rounded-lg border border-secondary/20">
+              <div className="flex items-center justify-between p-4 bg-green-500/10 rounded-lg border border-green-500/20">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-secondary" />
+                  <CheckCircle className="h-5 w-5 text-green-500" />
                   <span className="font-semibold">Respostas Corretas</span>
                 </div>
-                <span className="text-2xl font-bold text-secondary">{correctAnswers}</span>
+                <span className="text-2xl font-bold text-green-500">{correctAnswers}</span>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-red-500/10 rounded-lg border border-red-500/20">
@@ -203,7 +203,7 @@ const QuickQuiz = () => {
               
               if (isAnswered) {
                 if (isCorrect) {
-                  buttonStyle = "border-2 border-secondary bg-secondary/10";
+                  buttonStyle = "border-2 border-green-500 bg-green-500/10";
                 } else if (isSelected && !isCorrect) {
                   buttonStyle = "border-2 border-red-500 bg-red-500/10";
                 }
@@ -226,7 +226,7 @@ const QuickQuiz = () => {
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{option}</span>
                     {isAnswered && isCorrect && (
-                      <CheckCircle className="h-5 w-5 text-secondary" />
+                      <CheckCircle className="h-5 w-5 text-green-500" />
                     )}
                     {isAnswered && isSelected && !isCorrect && (
                       <XCircle className="h-5 w-5 text-red-500" />
@@ -254,11 +254,11 @@ const QuickQuiz = () => {
         <div className="mt-6 grid grid-cols-2 gap-4">
           <GameCard className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-secondary/10">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+              <div className="p-2 rounded-full bg-green-500/10">
+                <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-secondary">{correctAnswers}</div>
+                <div className="text-2xl font-bold text-green-500">{correctAnswers}</div>
                 <div className="text-sm text-muted-foreground">Corretas</div>
               </div>
             </div>
