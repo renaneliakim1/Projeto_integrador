@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BookOpen, Users, Target, Award, Heart, Lightbulb, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const About = () => {
   const features = [
@@ -31,6 +31,36 @@ const About = () => {
       title: "Comunidade Ativa",
       description: "Conecte-se com outros estudantes, compartilhe conhecimento e cresça junto.",
       color: "wisdom"
+    }
+  ];
+
+  const values = [
+    {
+      icon: Lightbulb,
+      title: "Inovação",
+      description: "Sempre buscando novas formas de tornar o aprendizado mais eficiente e divertido.",
+      color: "knowledge",
+      gradient: "gradient-knowledge",
+      shadow: "shadow-glow",
+      textColor: "text-knowledge"
+    },
+    {
+      icon: Globe,
+      title: "Inclusão",
+      description: "Educação acessível e de qualidade para todos, independente de origem ou condição.",
+      color: "growth",
+      gradient: "gradient-growth",
+      shadow: "shadow-cyan-glow",
+      textColor: "text-accent"
+    },
+    {
+      icon: Heart,
+      title: "Paixão",
+      description: "Movidos pela paixão de transformar vidas através da educação e do conhecimento.",
+      color: "wisdom",
+      gradient: "gradient-wisdom",
+      shadow: "shadow-orange-glow",
+      textColor: "text-wisdom"
     }
   ];
 
@@ -72,16 +102,78 @@ const About = () => {
     }
   ];
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const cardsToShow = 3;
-  const maxSlide = team.length - cardsToShow;
+  // Estados para carrosséis
+  const [missionSlide, setMissionSlide] = useState(0);
+  const [valuesSlide, setValuesSlide] = useState(0);
+  const [teamSlide, setTeamSlide] = useState(0);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
+  // Estados para número de cards a mostrar (responsividade)
+  const [missionCardsToShow, setMissionCardsToShow] = useState(1);
+  const [valuesCardsToShow, setValuesCardsToShow] = useState(1);
+  const [teamCardsToShow, setTeamCardsToShow] = useState(1);
+
+  // Atualiza número de cards baseado no tamanho da tela
+  useEffect(() => {
+    const updateCardsToShow = () => {
+      const width = window.innerWidth;
+      
+      // Missão: 4 cards em lg, 2 em md, 1 em mobile
+      setMissionCardsToShow(width >= 1024 ? 4 : width >= 768 ? 2 : 1);
+      
+      // Valores: 3 cards em md+, 1 em mobile
+      setValuesCardsToShow(width >= 768 ? 3 : 1);
+      
+      // Equipe: 3 cards em md+, 1 em mobile
+      setTeamCardsToShow(width >= 768 ? 3 : 1);
+    };
+
+    updateCardsToShow();
+    window.addEventListener('resize', updateCardsToShow);
+    return () => window.removeEventListener('resize', updateCardsToShow);
+  }, []);
+
+  // Reseta slides quando o número de cards muda
+  useEffect(() => {
+    setMissionSlide(0);
+  }, [missionCardsToShow]);
+
+  useEffect(() => {
+    setValuesSlide(0);
+  }, [valuesCardsToShow]);
+
+  useEffect(() => {
+    setTeamSlide(0);
+  }, [teamCardsToShow]);
+
+  const maxMissionSlide = Math.max(0, features.length - missionCardsToShow);
+  const maxValuesSlide = Math.max(0, values.length - valuesCardsToShow);
+  const maxTeamSlide = Math.max(0, team.length - teamCardsToShow);
+
+  // Funções de navegação - Missão
+  const nextMissionSlide = () => {
+    setMissionSlide((prev) => (prev >= maxMissionSlide ? 0 : prev + 1));
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
+  const prevMissionSlide = () => {
+    setMissionSlide((prev) => (prev <= 0 ? maxMissionSlide : prev - 1));
+  };
+
+  // Funções de navegação - Valores
+  const nextValuesSlide = () => {
+    setValuesSlide((prev) => (prev >= maxValuesSlide ? 0 : prev + 1));
+  };
+
+  const prevValuesSlide = () => {
+    setValuesSlide((prev) => (prev <= 0 ? maxValuesSlide : prev - 1));
+  };
+
+  // Funções de navegação - Equipe
+  const nextTeamSlide = () => {
+    setTeamSlide((prev) => (prev >= maxTeamSlide ? 0 : prev + 1));
+  };
+
+  const prevTeamSlide = () => {
+    setTeamSlide((prev) => (prev <= 0 ? maxTeamSlide : prev - 1));
   };
 
   return (
@@ -143,20 +235,74 @@ const About = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <Card key={index} className="p-6 text-center hover:shadow-elevated transition-shadow bg-card/80 backdrop-blur-sm">
-                    <div className={`mx-auto w-16 h-16 bg-gradient-${feature.color} rounded-full flex items-center justify-center mb-4 shadow-${feature.color === 'knowledge' ? 'glow' : feature.color === 'growth' ? 'cyan-glow' : feature.color === 'intellect' ? 'golden-glow' : 'orange-glow'}`}>
-                      <Icon className="h-8 w-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </Card>
-                );
-              })}
+            {/* Carrossel de Missão */}
+            <div className="relative">
+              {/* Botão Anterior */}
+              {maxMissionSlide > 0 && (
+                <button
+                  onClick={prevMissionSlide}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+
+              {/* Container do Carrossel */}
+              <div className="overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${missionSlide * (100 / missionCardsToShow)}%)` }}
+                >
+                  {features.map((feature, index) => {
+                    const Icon = feature.icon;
+                    return (
+                      <div 
+                        key={index} 
+                        className={`w-full ${missionCardsToShow === 4 ? 'lg:w-1/4' : ''} ${missionCardsToShow >= 2 ? 'md:w-1/2' : ''} flex-shrink-0 px-3`}
+                      >
+                        <Card className="p-6 text-center hover:shadow-elevated transition-shadow bg-card/80 backdrop-blur-sm h-full">
+                          <div className={`mx-auto w-16 h-16 bg-gradient-${feature.color} rounded-full flex items-center justify-center mb-4 shadow-${feature.color === 'knowledge' ? 'glow' : feature.color === 'growth' ? 'cyan-glow' : feature.color === 'intellect' ? 'golden-glow' : 'orange-glow'}`}>
+                            <Icon className="h-8 w-8 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                          <p className="text-muted-foreground">{feature.description}</p>
+                        </Card>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Botão Próximo */}
+              {maxMissionSlide > 0 && (
+                <button
+                  onClick={nextMissionSlide}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Próximo"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
             </div>
+
+            {/* Indicadores */}
+            {maxMissionSlide > 0 && (
+              <div className="flex justify-center gap-2 mt-8">
+                {Array.from({ length: maxMissionSlide + 1 }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setMissionSlide(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      missionSlide === index 
+                        ? 'w-8 bg-primary' 
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Ir para slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -172,37 +318,76 @@ const About = () => {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="mx-auto w-20 h-20 bg-gradient-knowledge rounded-full flex items-center justify-center mb-4 shadow-glow">
-                  <Lightbulb className="h-10 w-10 text-white" />
+            {/* Carrossel de Valores */}
+            <div className="relative">
+              {/* Botão Anterior */}
+              {maxValuesSlide > 0 && (
+                <button
+                  onClick={prevValuesSlide}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+
+              {/* Container do Carrossel */}
+              <div className="overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${valuesSlide * (100 / valuesCardsToShow)}%)` }}
+                >
+                  {values.map((value, index) => {
+                    const Icon = value.icon;
+                    return (
+                      <div 
+                        key={index} 
+                        className={`w-full ${valuesCardsToShow === 3 ? 'md:w-1/3' : ''} flex-shrink-0 px-4`}
+                      >
+                        <div className="text-center h-full flex flex-col">
+                          <div className={`mx-auto w-20 h-20 bg-${value.gradient} rounded-full flex items-center justify-center mb-4 ${value.shadow}`}>
+                            <Icon className="h-10 w-10 text-white" />
+                          </div>
+                          <h3 className={`text-xl font-bold mb-3 ${value.textColor}`}>{value.title}</h3>
+                          <p className="text-muted-foreground">
+                            {value.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-knowledge">Inovação</h3>
-                <p className="text-muted-foreground">
-                  Sempre buscando novas formas de tornar o aprendizado mais eficiente e divertido.
-                </p>
               </div>
 
-              <div className="text-center">
-                <div className="mx-auto w-20 h-20 bg-gradient-growth rounded-full flex items-center justify-center mb-4 shadow-cyan-glow">
-                  <Globe className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-accent">Inclusão</h3>
-                <p className="text-muted-foreground">
-                  Educação acessível e de qualidade para todos, independente de origem ou condição.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="mx-auto w-20 h-20 bg-gradient-wisdom rounded-full flex items-center justify-center mb-4 shadow-orange-glow">
-                  <Heart className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-wisdom">Paixão</h3>
-                <p className="text-muted-foreground">
-                  Movidos pela paixão de transformar vidas através da educação e do conhecimento.
-                </p>
-              </div>
+              {/* Botão Próximo */}
+              {maxValuesSlide > 0 && (
+                <button
+                  onClick={nextValuesSlide}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Próximo"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
             </div>
+
+            {/* Indicadores */}
+            {maxValuesSlide > 0 && (
+              <div className="flex justify-center gap-2 mt-8">
+                {Array.from({ length: maxValuesSlide + 1 }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setValuesSlide(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      valuesSlide === index 
+                        ? 'w-8 bg-primary' 
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Ir para slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -221,27 +406,29 @@ const About = () => {
               </p>
             </div>
 
-            {/* Carrossel */}
+            {/* Carrossel da Equipe */}
             <div className="relative">
               {/* Botão Anterior */}
-              <button
-                onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Anterior"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
+              {maxTeamSlide > 0 && (
+                <button
+                  onClick={prevTeamSlide}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
 
               {/* Container do Carrossel */}
               <div className="overflow-hidden">
                 <div 
                   className="flex transition-transform duration-500 ease-out"
-                  style={{ transform: `translateX(-${currentSlide * (100 / cardsToShow)}%)` }}
+                  style={{ transform: `translateX(-${teamSlide * (100 / teamCardsToShow)}%)` }}
                 >
                   {team.map((member, index) => (
                     <div 
                       key={index} 
-                      className="w-full md:w-1/3 flex-shrink-0 px-4"
+                      className={`w-full ${teamCardsToShow === 3 ? 'md:w-1/3' : ''} flex-shrink-0 px-4`}
                     >
                       <Card className="p-6 text-center hover:shadow-elevated transition-shadow bg-card/80 backdrop-blur-sm h-full">
                         <div className="w-24 h-24 bg-gradient-primary rounded-full mx-auto mb-4 flex items-center justify-center shadow-glow">
@@ -257,30 +444,34 @@ const About = () => {
               </div>
 
               {/* Botão Próximo */}
-              <button
-                onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Próximo"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
+              {maxTeamSlide > 0 && (
+                <button
+                  onClick={nextTeamSlide}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-glow transition-all hover:scale-110"
+                  aria-label="Próximo"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
             </div>
 
             {/* Indicadores */}
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: maxSlide + 1 }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    currentSlide === index 
-                      ? 'w-8 bg-primary' 
-                      : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                  }`}
-                  aria-label={`Ir para slide ${index + 1}`}
-                />
-              ))}
-            </div>
+            {maxTeamSlide > 0 && (
+              <div className="flex justify-center gap-2 mt-8">
+                {Array.from({ length: maxTeamSlide + 1 }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setTeamSlide(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      teamSlide === index 
+                        ? 'w-8 bg-primary' 
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Ir para slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

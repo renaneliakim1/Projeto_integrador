@@ -293,7 +293,8 @@ const Header = () => {
                     <DropdownMenuContent align="end" className="w-48">
                       {location.pathname !== '/login' && (
                         <DropdownMenuItem asChild>
-                          <Link to="/login" className="w-full cursor-pointer">
+                          <Link to="/login" className="w-full cursor-pointer flex items-center">
+                            <UserCircle className="h-4 w-4 mr-2" />
                             Entrar
                           </Link>
                         </DropdownMenuItem>
