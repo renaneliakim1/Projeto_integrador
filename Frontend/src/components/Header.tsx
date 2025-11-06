@@ -199,7 +199,7 @@ const Header = () => {
           {/* Logo - Centralizado em mobile, à esquerda em desktop */}
           <div className="flex items-center space-x-3 lg:flex-none absolute left-1/2 transform -translate-x-1/2 lg:static lg:transform-none">
             <Link to="/">
-              <img src="/logoSkillio2.svg" alt="Skillio" className="h-16 w-24 rounded-md object-cover" />
+              <img src="/logoSkillio2.svg" alt="Skillio" className="h-10 w-22 rounded-md object-cover" />
             </Link>
           </div>
 
