@@ -516,7 +516,7 @@ const StudyPlan = () => {
               {/* Botão de Voltar */}
               <div className="flex justify-center">
                 <Button 
-                  variant="outline"
+                  className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow"
                   size="lg" 
                   onClick={() => navigate('/dashboard')}
                 >

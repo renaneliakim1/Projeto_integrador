@@ -35,24 +35,23 @@ const Login = () => {
       return;
     }
 
-    if (!executeRecaptcha) {
-      toast({
-        title: "Erro",
-        description: "reCAPTCHA não está disponível. Tente novamente.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      // Executa o reCAPTCHA v3
-      const recaptchaToken = await executeRecaptcha('login');
+      let recaptchaToken = '';
+      
+      // Tenta executar o reCAPTCHA se disponível
+      if (executeRecaptcha) {
+        try {
+          recaptchaToken = await executeRecaptcha('login');
+        } catch (recaptchaError) {
+          console.warn('reCAPTCHA não disponível, fazendo login sem token:', recaptchaError);
+        }
+      }
 
       const response = await apiClient.post('/auth/login/', {
         username: email,
         password,
-        recaptcha_token: recaptchaToken, // Envia o token para o backend
+        recaptcha_token: recaptchaToken, // Envia o token para o backend (vazio se não disponível)
       });
       
       const { access, refresh } = response.data;
