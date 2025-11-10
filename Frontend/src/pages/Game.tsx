@@ -225,10 +225,8 @@ const Game = () => {
             // ignore storage errors
           }
 
-          // Após uma breve pausa para o usuário ver a tela de conclusão, redirecionamos para a Trilha
-          setTimeout(() => {
-            navigate('/trilha');
-          }, 2000);
+          // Usuário decide para onde ir através dos botões na tela de vitória
+          // Removido redirecionamento automático para dar controle ao usuário
         } else if (mistakes >= 5 || hearts <= 0) { // Player lost (por erros ou por falta de vidas)
           // Descarta TODOS os pontos e XP (não concluiu as 15 perguntas)
           setPendingScore(0);
