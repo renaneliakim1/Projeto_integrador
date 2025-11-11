@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "EduJornada",
-    "slug": "edujornada-mobile",
+  "name": "Skillio",
+  "slug": "skillio-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,14 +16,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.edujornada.mobile"
+      "bundleIdentifier": "com.skillio.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
       },
-      "package": "com.edujornada.mobile",
+      "package": "com.skillio.mobile",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",

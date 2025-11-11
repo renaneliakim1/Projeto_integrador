@@ -1,25 +1,40 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
+import Button from '@components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/Card';
+import Progress from '@components/ui/Progress';
 import { useAuth } from '@contexts/AuthContext';
-import { useGamification } from '@hooks/useGamification';
+import { trilhaPrincipal } from '@data/trilhaPrincipal';
+import { Ionicons } from '@expo/vector-icons';
 import { useDashboardData } from '@hooks/useDashboardData';
+import { useGamification } from '@hooks/useGamification';
 import { useTimeTracker } from '@hooks/useTimeTracker';
 import { useToast } from '@hooks/useToast';
-import { Card, CardHeader, CardTitle, CardContent } from '@components/ui/Card';
-import Button from '@components/ui/Button';
-import Progress from '@components/ui/Progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { trilhaPrincipal } from '@data/trilhaPrincipal';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
+
+// Tipagem explícita para calculatePerformance
+interface Subject {
+  correct_answers?: number;
+  incorrect_answers?: number;
+}
+const calculatePerformance = (subjects: Subject[]): number => {
+  const totalAcertos = subjects.reduce((sum: number, item: Subject) => sum + (item.correct_answers || 0), 0);
+  const totalErros = subjects.reduce((sum: number, item: Subject) => sum + (item.incorrect_answers || 0), 0);
+  const total = totalAcertos + totalErros;
+  return total > 0 ? Math.round((totalAcertos / total) * 100) : 0;
+};
 
 type RootStackParamList = {
   Login: undefined;
@@ -28,34 +43,31 @@ type RootStackParamList = {
   QuizNivelamento: undefined;
 };
 
-const { width } = Dimensions.get('window');
-
-// Função auxiliar para calcular o desempenho
-const calculatePerformance = (subjects: any[]) => {
-  const totalAcertos = subjects.reduce((sum: number, item: any) => sum + (item.correct_answers || 0), 0);
-  const totalErros = subjects.reduce((sum: number, item: any) => sum + (item.incorrect_answers || 0), 0);
-  const total = totalAcertos + totalErros;
-  return total > 0 ? Math.round((totalAcertos / total) * 100) : 0;
-};
-
 const DashboardScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
   const { totalTimeInSeconds } = useTimeTracker();
-  
   const { userData, performanceData, activities, isLoading, refetchData, error } = useDashboardData();
   const { level, xp, streak, dailyQuests, blocosCompletos, hearts, nextRefillInSeconds } = useGamification();
-  
-  // Calcula progresso manualmente (blocos / 15 * 100)
-  const progress = useMemo(() => {
-    if (!blocosCompletos) return 0;
-    const currentLevelBlocks = blocosCompletos.length % 15;
-    return (currentLevelBlocks / 15) * 100;
-  }, [blocosCompletos]);
 
+  // Mascote animado
+  const mascotAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(mascotAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(mascotAnim, { toValue: 0, duration: 1200, useNativeDriver: true })
+      ])
+    ).start();
+  }, [mascotAnim]);
+
+  const userName = userData?.first_name || 'Usuário';
+  const profilePicture = userData?.profile?.foto || `https://api.dicebear.com/8.x/adventurer/svg?seed=${userName}`;
+  const studyPlan = (userData?.profile && 'study_plan' in userData.profile)
+    ? (userData.profile as any).study_plan
+    : null;
   const [blockCountOnQuizStart, setBlockCountOnQuizStart] = useState(0);
-
   useEffect(() => {
     const loadBlockCount = async () => {
       const count = await AsyncStorage.getItem('blockCountOnQuizStart');
@@ -64,10 +76,6 @@ const DashboardScreen = () => {
     loadBlockCount();
   }, []);
 
-  // determine if user has a study plan
-  const studyPlan = (userData?.profile as any)?.study_plan ?? null;
-
-  // Lógica para o botão de Nivelamento/Plano de Estudo
   const initialQuizDone = useMemo(() => {
     if (performanceData && performanceData.length > 0) {
       const hasAnyAnswers = performanceData.some(area =>
@@ -90,18 +98,6 @@ const DashboardScreen = () => {
     return hasCompletedAnyLevel && blocosCompletos.length > blockCountOnQuizStart;
   }, [blocosCompletos, blockCountOnQuizStart, hasCompletedAnyLevel]);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigation.navigate('Login');
-    }
-  }, [isAuthenticated, navigation]);
-
-  useEffect(() => {
-    if (error) {
-      toast.toast({ title: 'Erro ao carregar dados do dashboard', variant: 'destructive' });
-    }
-  }, [error, toast]);
-
   const handleNextExercise = () => {
     if (initialQuizDone) {
       if (hearts <= 0) {
@@ -114,6 +110,7 @@ const DashboardScreen = () => {
             : 'As vidas recarregam a cada 3 minutos.',
           variant: 'default'
         });
+        return;
       }
       navigation.navigate('Trilha');
     } else {
@@ -126,10 +123,6 @@ const DashboardScreen = () => {
     }
   };
 
-  const userName = userData?.first_name || 'Usuário';
-  const profilePicture = userData?.profile?.foto || `https://api.dicebear.com/8.x/adventurer/svg?seed=${userName}`;
-
-  // Formatação do tempo de estudo
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -137,7 +130,12 @@ const DashboardScreen = () => {
     return `${minutes}m`;
   };
 
-  // Calcula performance geral
+  const progress = useMemo(() => {
+    if (!blocosCompletos) return 0;
+    const currentLevelBlocks = blocosCompletos.length % 15;
+    return (currentLevelBlocks / 15) * 100;
+  }, [blocosCompletos]);
+
   const overallPerformance = useMemo(() => {
     if (!performanceData || performanceData.length === 0) return 0;
     const performances = performanceData.map(area => calculatePerformance(area.subjects));
@@ -154,198 +152,209 @@ const DashboardScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.profileSection}>
-          <Image source={{ uri: profilePicture }} style={styles.profileImage} />
-          <View style={styles.greetingSection}>
-            <Text style={styles.greeting}>Bem-vindo,</Text>
-            <Text style={styles.userName}>{userName}!</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Ionicons name="star" size={16} color="#fbbf24" />
-                <Text style={styles.statText}>Nível: <Text style={styles.statValue}>{level}</Text></Text>
+    <View style={styles.gradientBackground}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header com gradiente e mascote */}
+        <View style={styles.header}>
+          <View style={styles.mascotContainer}>
+            <Animated.View style={{
+              transform: [{ scale: mascotAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }],
+              shadowColor: '#3b82f6',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+              elevation: 12,
+            }}>
+              <Image source={require('../../../assets/mascot.png')} style={styles.mascotImage} />
+            </Animated.View>
+          </View>
+          <View style={styles.profileSection}>
+            <Image source={{ uri: profilePicture }} style={styles.profileImage} />
+            <View style={styles.greetingSection}>
+              <Text style={styles.greeting}>Bem-vindo,</Text>
+              <Text style={styles.userName}>{userName}!</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Ionicons name="star" size={16} color="#fbbf24" />
+                  <Text style={styles.statText}>Nível: <Text style={styles.statValue}>{level}</Text></Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Ionicons name="trophy" size={16} color="#fbbf24" />
+                  <Text style={styles.statText}>XP: <Text style={styles.statValue}>{xp}</Text></Text>
+                </View>
               </View>
-              <View style={styles.statItem}>
-                <Ionicons name="trophy" size={16} color="#fbbf24" />
-                <Text style={styles.statText}>XP: <Text style={styles.statValue}>{xp}</Text></Text>
-              </View>
+              {streak > 0 && (
+                <View style={styles.streakContainer}>
+                  <Ionicons name="flame" size={16} color="#f59e0b" />
+                  <Text style={styles.streakText}>Sequência: {streak} dias 🔥</Text>
+                </View>
+              )}
             </View>
-            {streak > 0 && (
-              <View style={styles.streakContainer}>
-                <Ionicons name="flame" size={16} color="#f59e0b" />
-                <Text style={styles.streakText}>Sequência: {streak} dias 🔥</Text>
-              </View>
+          </View>
+          <View style={styles.actionButtons}>
+            {!initialQuizDone ? (
+              <Button
+                variant="outline"
+                onPress={() => navigation.navigate('QuizNivelamento')}
+              >
+                Quiz de Nivelamento
+              </Button>
+            ) : (
+              <>
+                {studyPlan && (
+                  <Button
+                    variant="outline"
+                    onPress={() => navigation.navigate('StudyPlan')}
+                    style={styles.buttonMargin}
+                  >
+                    Meu Plano de Estudo
+                  </Button>
+                )}
+                {canRetakeQuiz && (
+                  <Button
+                    variant="outline"
+                    onPress={() => navigation.navigate('QuizNivelamento')}
+                    style={styles.buttonMargin}
+                  >
+                    Refazer Quiz
+                  </Button>
+                )}
+              </>
             )}
+            <Button
+              variant="secondary"
+              onPress={handleNextExercise}
+              style={styles.nextLessonButton}
+            >
+              Próxima Lição
+            </Button>
           </View>
         </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          {!initialQuizDone ? (
-            <Button
-              variant="outline"
-              onPress={() => navigation.navigate('QuizNivelamento')}
-            >
-              Quiz de Nivelamento
-            </Button>
-          ) : (
-            <>
-              {studyPlan && (
-                <Button
-                  variant="outline"
-                  onPress={() => navigation.navigate('StudyPlan')}
-                  style={styles.buttonMargin}
-                >
-                  Meu Plano de Estudo
-                </Button>
-              )}
-              {canRetakeQuiz && (
-                <Button
-                  variant="outline"
-                  onPress={() => navigation.navigate('QuizNivelamento')}
-                  style={styles.buttonMargin}
-                >
-                  Refazer Quiz
-                </Button>
-              )}
-            </>
-          )}
-          <Button
-            variant="secondary"
-            onPress={handleNextExercise}
-            style={styles.nextLessonButton}
-          >
-            Próxima Lição
-          </Button>
-        </View>
-      </View>
-
-      {/* Stats Cards */}
-      <View style={styles.statsGrid}>
-        {/* Hearts Card */}
-        <Card variant="default" style={styles.statCard}>
-          <CardContent>
-            <View style={styles.cardContent}>
-              <Ionicons name="heart" size={32} color="#ef4444" />
-              <Text style={styles.statCardValue}>{hearts}/5</Text>
-              <Text style={styles.statCardLabel}>Vidas</Text>
-              {nextRefillInSeconds !== null && nextRefillInSeconds > 0 && (
-                <Text style={styles.refillText}>
-                  +1 em {Math.floor(nextRefillInSeconds / 60)}:{String(nextRefillInSeconds % 60).padStart(2, '0')}
-                </Text>
-              )}
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Progress Card */}
-        <Card variant="default" style={styles.statCard}>
-          <CardContent>
-            <View style={styles.cardContent}>
-              <Ionicons name="trending-up" size={32} color="#3b82f6" />
-              <Text style={styles.statCardValue}>{Math.round(progress)}%</Text>
-              <Text style={styles.statCardLabel}>Progresso</Text>
-              <Progress value={progress} color="#3b82f6" style={styles.progressBar} />
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Study Time Card */}
-        <Card variant="default" style={styles.statCard}>
-          <CardContent>
-            <View style={styles.cardContent}>
-              <Ionicons name="time" size={32} color="#f59e0b" />
-              <Text style={styles.statCardValue}>{formatTime(totalTimeInSeconds)}</Text>
-              <Text style={styles.statCardLabel}>Tempo Hoje</Text>
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Performance Card */}
-        <Card variant="default" style={styles.statCard}>
-          <CardContent>
-            <View style={styles.cardContent}>
-              <Ionicons name="stats-chart" size={32} color="#22c55e" />
-              <Text style={styles.statCardValue}>{overallPerformance}%</Text>
-              <Text style={styles.statCardLabel}>Desempenho</Text>
-            </View>
-          </CardContent>
-        </Card>
-      </View>
-
-      {/* Daily Quests */}
-      <Card variant="default" style={styles.questsCard}>
-        <CardHeader>
-          <CardTitle>Missões Diárias</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {dailyQuests && dailyQuests.length > 0 ? (
-            dailyQuests.map((quest) => (
-              <View
-                key={quest.quest.id}
-                style={[
-                  styles.questItem,
-                  quest.is_completed && styles.questItemCompleted,
-                ]}
-              >
-                <Icon
-                  name={quest.is_completed ? 'checkmark-circle' : 'radio-button-off'}
-                  size={24}
-                  color={quest.is_completed ? '#f59e0b' : '#737373'}
-                />
-                <Text
-                  style={[
-                    styles.questText,
-                    quest.is_completed && styles.questTextCompleted,
-                  ]}
-                >
-                  {quest.quest.description}
-                </Text>
-                {!quest.is_completed && (
-                  <Text style={styles.questReward}>+{quest.quest.xp_reward} XP</Text>
+        {/* Restante do dashboard: cards, missões, desempenho, etc. */}
+        <View style={styles.statsGrid}>
+          {/* Hearts Card */}
+          <Card variant="default" style={styles.statCard}>
+            <CardContent>
+              <View style={styles.cardContent}>
+                <Ionicons name="heart" size={32} color="#ef4444" />
+                <Text style={styles.statCardValue}>{hearts}/5</Text>
+                <Text style={styles.statCardLabel}>Vidas</Text>
+                {nextRefillInSeconds !== null && nextRefillInSeconds > 0 && (
+                  <Text style={styles.refillText}>
+                    +1 em {Math.floor(nextRefillInSeconds / 60)}:{String(nextRefillInSeconds % 60).padStart(2, '0')}
+                  </Text>
                 )}
               </View>
-            ))
-          ) : (
-            <Text style={styles.noQuestsText}>Nenhuma missão disponível hoje</Text>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Performance by Area */}
-      {performanceData && performanceData.length > 0 && (
-        <Card variant="default" style={styles.performanceCard}>
+            </CardContent>
+          </Card>
+          {/* Progress Card */}
+          <Card variant="default" style={styles.statCard}>
+            <CardContent>
+              <View style={styles.cardContent}>
+                <Ionicons name="trending-up" size={32} color="#3b82f6" />
+                <Text style={styles.statCardValue}>{Math.round(progress)}%</Text>
+                <Text style={styles.statCardLabel}>Progresso</Text>
+                <Progress value={progress} color="#3b82f6" style={styles.progressBar} />
+              </View>
+            </CardContent>
+          </Card>
+          {/* Study Time Card */}
+          <Card variant="default" style={styles.statCard}>
+            <CardContent>
+              <View style={styles.cardContent}>
+                <Ionicons name="time" size={32} color="#f59e0b" />
+                <Text style={styles.statCardValue}>{formatTime(totalTimeInSeconds)}</Text>
+                <Text style={styles.statCardLabel}>Tempo Hoje</Text>
+              </View>
+            </CardContent>
+          </Card>
+          {/* Performance Card */}
+          <Card variant="default" style={styles.statCard}>
+            <CardContent>
+              <View style={styles.cardContent}>
+                <Ionicons name="stats-chart" size={32} color="#22c55e" />
+                <Text style={styles.statCardValue}>{overallPerformance}%</Text>
+                <Text style={styles.statCardLabel}>Desempenho</Text>
+              </View>
+            </CardContent>
+          </Card>
+        </View>
+        {/* Missões Diárias */}
+        <Card variant="default" style={styles.questsCard}>
           <CardHeader>
-            <CardTitle>Desempenho por Área</CardTitle>
+            <CardTitle>Missões Diárias</CardTitle>
           </CardHeader>
           <CardContent>
-            {performanceData.map((area) => {
-              const areaPerf = calculatePerformance(area.subjects);
-              return (
-                <View key={area.area_name} style={styles.performanceItem}>
-                  <View style={styles.performanceHeader}>
-                    <Text style={styles.performanceLabel}>{area.area_name}</Text>
-                    <Text style={styles.performanceValue}>{areaPerf}%</Text>
-                  </View>
-                  <Progress value={areaPerf} color={areaPerf >= 70 ? '#22c55e' : areaPerf >= 40 ? '#f59e0b' : '#ef4444'} />
+            {dailyQuests && dailyQuests.length > 0 ? (
+              dailyQuests.map((quest) => (
+                <View
+                  key={quest.quest.id}
+                  style={[styles.questItem, quest.is_completed && styles.questItemCompleted]}
+                >
+                  <Ionicons name={quest.is_completed ? 'checkmark-circle' : 'radio-button-off'} size={24} color={quest.is_completed ? '#f59e0b' : '#737373'} />
+                  <Text style={[styles.questText, quest.is_completed && styles.questTextCompleted]}>
+                    {quest.quest.description}
+                  </Text>
+                  {!quest.is_completed && (
+                    <Text style={styles.questReward}>+{quest.quest.xp_reward} XP</Text>
+                  )}
                 </View>
-              );
-            })}
+              ))
+            ) : (
+              <Text style={styles.noQuestsText}>Nenhuma missão disponível hoje</Text>
+            )}
           </CardContent>
         </Card>
-      )}
-
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+        {/* Desempenho por Área */}
+        {performanceData && performanceData.length > 0 && (
+          <Card variant="default" style={styles.performanceCard}>
+            <CardHeader>
+              <CardTitle>Desempenho por Área</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {performanceData.map((area) => {
+                const areaPerf = calculatePerformance(area.subjects);
+                return (
+                  <View key={area.area_name} style={styles.performanceItem}>
+                    <View style={styles.performanceHeader}>
+                      <Text style={styles.performanceLabel}>{area.area_name}</Text>
+                      <Text style={styles.performanceValue}>{areaPerf}%</Text>
+                    </View>
+                    <Progress value={areaPerf} color={areaPerf >= 70 ? '#22c55e' : areaPerf >= 40 ? '#f59e0b' : '#ef4444'} />
+                  </View>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  gradientBackground: {
     flex: 1,
     backgroundColor: '#0a0a0a',
+    position: 'relative',
+  },
+  mascotContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  mascotImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#fff',
+    borderWidth: 4,
+    borderColor: '#3b82f6',
+    marginBottom: 8,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
