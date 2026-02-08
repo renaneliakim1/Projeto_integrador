@@ -412,7 +412,7 @@ const Profile = () => {
           </div>
 
           {/* Ações de Teste (apenas em dev) */}
-          {process.env.NODE_ENV === 'development' && (
+       {/*    {process.env.NODE_ENV === 'development' && (
             <GameCard className="p-6 border-dashed border-yellow-500/50 bg-yellow-500/5">
               <div className="flex items-center gap-2 mb-4">
                 <LucideIcons.Bug className="h-5 w-5 text-yellow-500" />
@@ -427,7 +427,7 @@ const Profile = () => {
                 Adicionar 50 XP (Teste)
               </Button>
             </GameCard>
-          )}
+          )} */}
         </div>
       </div>
     </div>

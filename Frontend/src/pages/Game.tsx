@@ -81,6 +81,8 @@ const Game = () => {
   const [pendingScore, setPendingScore] = useState(0);
   const [pendingXp, setPendingXp] = useState(0);
   const [sessionAnswers, setSessionAnswers] = useState({ correct: 0, incorrect: 0 });
+  const [gameOverProcessed, setGameOverProcessed] = useState(false);
+  const [lossReason, setLossReason] = useState<'mistakes' | 'hearts' | null>(null); // Armazena o motivo da derrota
 
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio';
 
@@ -92,51 +94,36 @@ const Game = () => {
 
   const questions: Question[] = generatedQuestions;
 
+  // Verifica vidas APENAS no início do jogo, não durante
   useEffect(() => {
-    // Impede o início do jogo se o usuário não tiver vidas e o bloco não estiver completo
-    if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
+    // Só redireciona se:
+    // 1. É um jogo de trilha
+    // 2. Não tem vidas
+    // 3. O bloco não está completo
+    // 4. O jogo NÃO está em andamento (currentQuestion === 0, não está em gameOver nem showResult)
+    if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId) && 
+        currentQuestion === 0 && !gameOver && !showResult) {
         toast({ title: "Sem vidas!", description: "Você precisa de vidas para começar um novo bloco.", variant: "destructive" });
         navigate('/trilha');
     }
-  }, [isTrailGame, hearts, blocoId, isBlockCompleted, navigate, toast]);
+  }, [isTrailGame, hearts, blocoId, isBlockCompleted, navigate, toast, currentQuestion, gameOver, showResult]);
 
   const handleAnswer = useCallback(async (answerIndex: number) => {
+    // Previne múltiplas execuções
+    if (showResult || gameOver) return;
+    
     setSelectedAnswer(answerIndex);
     setShowResult(true);
     
     const isCorrect = answerIndex === questions[currentQuestion]?.correct;
   if (isCorrect) {
     setSessionAnswers(prev => ({ ...prev, correct: prev.correct + 1 }));
-    // Sempre contabiliza pontos de score imediatamente ao acertar.
-    // Em jogos de trilha, adiamos a atribuição de XP ao backend até a finalização do bloco
-    // (o usuário precisa completar as 15 perguntas do nível para receber o XP do bloco).
     setScore(prevScore => prevScore + 10);
-    // Acumula XP pendente para salvar apenas ao final do quiz (tanto trilha quanto avulso)
     setPendingScore(prev => prev + 10);
-    setPendingXp(prev => prev + 10);  // 10 XP por pergunta certa
+    setPendingXp(prev => prev + 10);
     toast({ title: "Correto! 🎉" });
-    } else {
-      setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
-      
-      // Perde vida em TODOS os tipos de quiz quando erra (não apenas trilha)
-      if (answerIndex !== null && answerIndex !== -1) { // Apenas erros contam, não pulos ou tempo esgotado
-        if (isTrailGame) {
-          setMistakes(prev => prev + 1);
-        }
-        // Aguarda a perda de vida para garantir que o estado seja atualizado no header
-        await loseHeart();
-      }
-      
-      if (answerIndex === -1) {
-        toast({ title: "Tempo esgotado! ⏰", variant: "destructive" });
-      } else if (answerIndex === null) { // Pulo
-        toast({ title: "Pergunta pulada!", variant: "default" });
-      } else {
-        toast({ title: "Incorreto 😔", description: "Você perdeu uma vida.", variant: "destructive" });
-      }
-    }
-
-    // Avança para próxima pergunta depois de mostrar resultado. Mantemos UX responsivo com timeout.
+    
+    // Avança para próxima pergunta
     setTimeout(() => {
       if (currentQuestion + 1 < questions.length) {
         setCurrentQuestion(currentQuestion + 1);
@@ -147,39 +134,94 @@ const Game = () => {
         setGameOver(true);
       }
     }, 500);
-  }, [currentQuestion, questions, toast, loseHeart, isTrailGame, setPendingScore, setPendingXp]);
+    
+    } else {
+      setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
+      
+      // Captura vidas ANTES de perder
+      const heartsBeforeLoss = hearts;
+      let newMistakes = mistakes;
+      
+      // Perde vida quando erra (não em pulos ou tempo esgotado)
+      if (answerIndex !== null && answerIndex !== -1) {
+        if (isTrailGame) {
+          newMistakes = mistakes + 1;
+          setMistakes(newMistakes);
+        }
+        await loseHeart();
+        toast({ title: "Incorreto 😔", description: "Você perdeu uma vida.", variant: "destructive" });
+      } else if (answerIndex === -1) {
+        toast({ title: "Tempo esgotado! ⏰", variant: "destructive" });
+      } else {
+        toast({ title: "Pergunta pulada!", variant: "default" });
+      }
+
+      // Verifica condições de derrota
+      const shouldEndByMistakes = isTrailGame && newMistakes >= 5;
+      const shouldEndByHearts = answerIndex !== null && answerIndex !== -1 && heartsBeforeLoss <= 1;
+      
+      console.log('🔍 Debug Game Over Check:', { 
+        shouldEndByMistakes, 
+        shouldEndByHearts, 
+        newMistakes, 
+        heartsBeforeLoss,
+        answerIndex,
+        isTrailGame,
+        currentQuestion,
+        totalQuestions: questions.length
+      });
+      
+      // Se perdeu, PARA AQUI e não avança
+      if (shouldEndByMistakes || shouldEndByHearts) {
+        console.log('❌ GAME OVER TRIGGERED - Vai mostrar tela de derrota');
+        // Marca o motivo da derrota ANTES de setar gameOver
+        const reason = shouldEndByMistakes ? 'mistakes' : 'hearts';
+        setLossReason(reason);
+        console.log('🏴 Loss Reason setado como:', reason);
+        
+        setTimeout(() => {
+          console.log('⏰ Timeout executado - Setando gameOver = true');
+          setGameOver(true);
+          setShowResult(false); // Remove showResult para evitar conflitos
+        }, 1500);
+        return; // CRITICAL: Impede execução do código abaixo
+      }
+
+      // Só chega aqui se NÃO perdeu - avança para próxima
+      setTimeout(() => {
+        if (currentQuestion + 1 < questions.length) {
+          setCurrentQuestion(currentQuestion + 1);
+          setTimeLeft(30);
+          setSelectedAnswer(null);
+          setShowResult(false);
+        } else {
+          setGameOver(true);
+        }
+      }, 500);
+    }
+  }, [currentQuestion, questions, toast, loseHeart, isTrailGame, mistakes, hearts, showResult, gameOver]);
 
   useEffect(() => {
     if (timeLeft > 0 && !showResult && !gameOver && questions.length > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !showResult && questions.length > 0) {
+    } else if (timeLeft === 0 && !showResult && questions.length > 0 && !gameOver) {
       handleAnswer(-1);
     }
   }, [timeLeft, showResult, gameOver, questions, handleAnswer]);
 
-  useEffect(() => {
-    if (isTrailGame && mistakes >= 5) {
-        setGameOver(true);
-        toast({ title: "Limite de erros atingido!", description: "Você cometeu 5 erros e o quiz foi encerrado.", variant: "destructive" });
-    }
-  }, [mistakes, isTrailGame, toast]);
-
-  // Monitora as vidas e encerra o jogo quando chegarem a zero
-  useEffect(() => {
-    if (hearts <= 0 && !gameOver) {
-      setGameOver(true);
-      toast({ 
-        title: "Sem vidas!", 
-        description: "Você ficou sem vidas. O quiz foi encerrado.", 
-        variant: "destructive" 
-      });
-    }
-  }, [hearts, gameOver, toast]);
+  // UseEffect de backup removido - agora a detecção é 100% dentro de handleAnswer para evitar conflitos
 
   useEffect(() => {
       const handleGameOver = async () => {
-      if (!gameOver) return;
+      if (!gameOver || gameOverProcessed) {
+        if (!gameOver) console.log('⏭️ handleGameOver: gameOver é false, pulando');
+        if (gameOverProcessed) console.log('⏭️ handleGameOver: já processado, pulando');
+        return;
+      }
+      
+      console.log('🎮 handleGameOver EXECUTANDO...', { mistakes, hearts, blocoId, lossReason });
+      setGameOverProcessed(true);
 
       try {
         await updatePerformance([{
@@ -192,8 +234,9 @@ const Game = () => {
       }
 
       if (blocoId && isTrailGame) {
-        // Verifica se o jogador venceu (menos de 5 erros E ainda tem vidas)
-        if (mistakes < 5 && hearts > 0 && !isBlockCompleted(blocoId)) { // Player won
+        // Verifica se o jogador venceu (não há lossReason E ainda tem vidas)
+        if (!lossReason && hearts > 0 && !isBlockCompleted(blocoId)) {
+          console.log('✅ Jogador VENCEU o bloco');
           // Ao concluir o bloco, persistimos o XP ganho durante o bloco no backend
           let persistenceSucceeded = true;
           if (pendingXp > 0) {
@@ -209,14 +252,12 @@ const Game = () => {
             await completeBlock(blocoId);
           } catch (e) {
             console.warn('completeBlock failed', e);
-            // We consider block completion non-fatal for navigation, but mark persistence as partial
             persistenceSucceeded = false;
           }
           toast({
             title: "Bloco Concluído!",
             description: `Parabéns! Você completou o bloco e ganhou ${pendingXp} XP!`,
           });
-          // Marca que finalizou um quiz/jogo para que o Dashboard atualize quando o usuário voltar
           try {
             if (persistenceSucceeded) {
               sessionStorage.setItem('justFinishedQuiz', 'true');
@@ -224,20 +265,14 @@ const Game = () => {
           } catch (e) {
             // ignore storage errors
           }
-
-          // Usuário decide para onde ir através dos botões na tela de vitória
-          // Removido redirecionamento automático para dar controle ao usuário
-        } else if (mistakes >= 5 || hearts <= 0) { // Player lost (por erros ou por falta de vidas)
-          // Descarta TODOS os pontos e XP (não concluiu as 15 perguntas)
+        } else if (lossReason) {
+          console.log('❌ Jogador PERDEU o bloco por:', lossReason);
           setPendingScore(0);
           setPendingXp(0);
-          setScore(0); // Zera o score na tela
-          resetHearts();
-          // NÃO salva XP nem marca como concluído - usuário precisa completar as 15 perguntas
-          // NÃO redireciona automaticamente - aguarda ação do usuário
+          setScore(0);
         }
       } else if (!isTrailGame) {
-        // Para quizzes avulsos (não-trilha), salva o XP acumulado ao finalizar
+        console.log('🎯 Quiz avulso finalizado');
         if (pendingXp > 0) {
           try {
             await addXp(pendingXp);
@@ -255,7 +290,7 @@ const Game = () => {
     };
 
     handleGameOver();
-  }, [gameOver, blocoId, isTrailGame, completeBlock, isBlockCompleted, navigate, toast, pendingScore, pendingXp, addXp, mistakes, resetHearts, subject, sessionAnswers, updatePerformance, hearts]);
+  }, [gameOver, gameOverProcessed, blocoId, isTrailGame, completeBlock, isBlockCompleted, toast, pendingScore, pendingXp, addXp, mistakes, subject, sessionAnswers, updatePerformance, hearts, lossReason]);
 
   const resetGame = () => {
       refetch();
@@ -269,26 +304,28 @@ const Game = () => {
       setPendingScore(0);
       setPendingXp(0);
       setSessionAnswers({ correct: 0, incorrect: 0 });
+      setGameOverProcessed(false);
+      setLossReason(null); // Reseta o motivo da derrota
   };
 
-  if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId)) {
-    return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-            <GameCard className="p-8 text-center">
-                <HeartCrack className="h-16 w-16 mx-auto mb-6 text-destructive" />
-                <h2 className="text-2xl font-bold mb-4">Você está sem vidas!</h2>
-                <p className="text-muted-foreground mb-6">Volte mais tarde para continuar sua jornada. As vidas recarregam com o tempo.</p>
-                <Button variant="game" onClick={() => navigate('/trilha')}>Voltar para a Trilha</Button>
-            </GameCard>
-        </div>
-    );
-  }
+  console.log('📊 Estado atual do jogo:', { 
+    gameOver, 
+    lossReason, 
+    hearts, 
+    mistakes, 
+    currentQuestion, 
+    loading, 
+    error,
+    questionsLength: questions?.length 
+  });
 
   if (!title) {
+      console.log('❌ RETURN: Título não encontrado');
       return <div className="text-center p-8">Bloco ou Matéria não encontrada.</div>
   }
 
   if (loading) {
+    console.log('⏳ RETURN: Carregando perguntas...');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <GameCard className="p-8 text-center">
@@ -324,9 +361,21 @@ const Game = () => {
     );
   }
 
+  // PRIORIDADE 1: Verifica gameOver PRIMEIRO (assim mostra resultado antes de qualquer outra coisa)
   if (gameOver) {
-    const playerWon = isTrailGame ? (mistakes < 5 && hearts > 0) : true;
-    const playerLost = isTrailGame && (mistakes >= 5 || hearts <= 0);
+    // Se há lossReason, o jogador perdeu. Caso contrário, venceu (ou é quiz avulso)
+    const playerLost = lossReason !== null;
+    const playerWon = !playerLost;
+
+    console.log('🎬 RENDERIZANDO TELA DE GAMEOVER:', { 
+      gameOver, 
+      playerWon, 
+      playerLost, 
+      lossReason, 
+      mistakes, 
+      hearts,
+      gameOverProcessed 
+    });
 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-2 sm:px-4">
@@ -349,7 +398,7 @@ const Game = () => {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 md:mb-8 text-foreground">Quiz Encerrado!</h2>
               <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
                 <div className="bg-red-500/10 border-2 border-red-500/30 p-3 sm:p-4 rounded-lg">
-                  {mistakes >= 5 ? (
+                  {lossReason === 'mistakes' ? (
                     <>
                       <p className="text-base sm:text-lg md:text-xl font-bold text-foreground break-words">
                         Você cometeu <span className="text-red-500">5 erros</span>
@@ -470,6 +519,21 @@ const Game = () => {
           </div>
         </GameCard>
       </div>
+    );
+  }
+
+  // PRIORIDADE 2: Verifica se tem vidas para INICIAR um jogo da trilha (não interfere com gameOver)
+  if (isTrailGame && hearts <= 0 && blocoId && !isBlockCompleted(blocoId) && currentQuestion === 0) {
+    console.log('🚫 BLOQUEIO: Sem vidas no início do jogo - redirecionando');
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <GameCard className="p-8 text-center">
+                <HeartCrack className="h-16 w-16 mx-auto mb-6 text-destructive" />
+                <h2 className="text-2xl font-bold mb-4">Você está sem vidas!</h2>
+                <p className="text-muted-foreground mb-6">Volte mais tarde para continuar sua jornada. As vidas recarregam com o tempo.</p>
+                <Button variant="game" onClick={() => navigate('/trilha')}>Voltar para a Trilha</Button>
+            </GameCard>
+        </div>
     );
   }
 
