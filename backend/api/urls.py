@@ -4,7 +4,7 @@ from .views import LoseHeartView, ResetHeartsView, RefillHeartsView
 from .views import StudyPlanView
 from .views import DeleteAccountView, RankingView, get_user_avatar, get_hero_stats, get_public_user, get_user_basic_info
 from .views import get_profile_card, public_profile_page
-from .views import forgot_password, reset_password, resend_code
+from .views import forgot_password, reset_password, resend_code, change_password
 from .health import health_check
 
 urlpatterns = [
@@ -34,4 +34,6 @@ urlpatterns = [
     path('auth/forgot-password/', forgot_password, name='forgot-password'),
     path('auth/reset-password/', reset_password, name='reset-password'),
     path('auth/resend-code/', resend_code, name='resend-code'),
+    # Alteração de senha
+    path('auth/password/change/', change_password, name='change-password'),
 ]

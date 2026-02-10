@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 import base64
 from django.conf import settings
 import google.generativeai as genai
@@ -1193,3 +1194,48 @@ def resend_code(request):
         return Response({
             'error': result['message']
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def change_password(request):
+    """
+    Altera a senha do usuário autenticado.
+    
+    Body: {
+        "new_password1": "NovaSenha123!",
+        "new_password2": "NovaSenha123!"
+    }
+    """
+    # Verifica autenticação
+    if not request.user.is_authenticated:
+        return Response({
+            'detail': 'Autenticação necessária.'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    user = request.user
+    new_password1 = request.data.get('new_password1')
+    new_password2 = request.data.get('new_password2')
+    
+    if not all([new_password1, new_password2]):
+        return Response({
+            'detail': 'Ambos os campos de senha são obrigatórios.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if new_password1 != new_password2:
+        return Response({
+            'detail': 'As senhas não correspondem.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(new_password1) < 6:
+        return Response({
+            'detail': 'A senha deve ter pelo menos 6 caracteres.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Atualizar senha
+    user.set_password(new_password1)
+    user.save()
+    
+    return Response({
+        'detail': 'Senha alterada com sucesso!'
+    }, status=status.HTTP_200_OK)

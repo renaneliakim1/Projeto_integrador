@@ -187,6 +187,31 @@ else:
     CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
     CORS_ALLOW_CREDENTIALS = True
 
+# CSRF Trusted Origins - Permite requisições de rede local
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+# Adiciona IPs da rede local dinamicamente
+import socket
+try:
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    CSRF_TRUSTED_ORIGINS.extend([
+        f'http://{local_ip}:8080',
+        f'http://{local_ip}:5173',
+    ])
+except:
+    pass
+
+# Adiciona origens do ambiente (para produção)
+env_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if env_origins:
+    CSRF_TRUSTED_ORIGINS.extend(env_origins.split(','))
+
 # CELERY
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
 CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379')

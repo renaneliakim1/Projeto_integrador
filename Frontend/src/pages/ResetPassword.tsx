@@ -31,14 +31,14 @@ const ResetPassword = () => {
   }, [location]);
 
   const handleResendCode = async () => {
-    if (!email) {
+    /* if (!email) {
       toast({
         title: "Email necessário",
         description: "Por favor, insira seu email.",
         variant: "destructive",
       });
       return;
-    }
+    } */
 
     setIsResendingCode(true);
     try {
@@ -64,7 +64,7 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
+/*     // Validações
     if (!email || !code || !newPassword || !confirmPassword) {
       toast({
         title: "Campos obrigatórios",
@@ -72,7 +72,7 @@ const ResetPassword = () => {
         variant: "destructive",
       });
       return;
-    }
+    } */
 
     if (code.length !== 6) {
       toast({
@@ -198,7 +198,7 @@ const ResetPassword = () => {
 
         <Card className="p-6 shadow-elevated bg-card/80 backdrop-blur-sm border-border/50">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">
                 Email
               </Label>
@@ -212,7 +212,7 @@ const ResetPassword = () => {
                 disabled={isLoading}
                 autoComplete="email"
               />
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="code" className="text-foreground">
