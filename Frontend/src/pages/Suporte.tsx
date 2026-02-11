@@ -22,7 +22,7 @@ import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { motion } from "framer-motion";
 
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_SUPORTE_ID; // Template de SUPORTE
 const EMAILJS_USER_ID = import.meta.env.VITE_EMAILJS_USER_ID;
 
 const Suporte = () => {
@@ -83,9 +83,11 @@ const Suporte = () => {
       }
 
       const templateParams = {
+        to_email: 'skillio.suporte@gmail.com', // 🔥 ALTERE PARA SEU EMAIL DE SUPORTE
         from_name: name,
         from_email: email,
         message: message,
+        reply_to: email,
         'g-recaptcha-response': token,
       };
 
