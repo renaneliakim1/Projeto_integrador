@@ -21,7 +21,11 @@ cd ~/Projeto_integrador
 echo "📥 Baixando última versão do GitHub..."
 git pull origin Renan---AWS-Free-Tier
 
-# Ativar ambiente virtual
+# Ativar ambiente virtual (criar se não existir)
+if [ ! -d ~/venv ]; then
+    echo "🔧 Criando ambiente virtual..."
+    python3 -m venv ~/venv
+fi
 source ~/venv/bin/activate
 
 # Ir para backend
