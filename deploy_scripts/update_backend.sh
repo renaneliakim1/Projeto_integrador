@@ -35,6 +35,10 @@ pip install -r requirements_prod.txt --quiet
 echo "🔄 Aplicando migrações..."
 python manage.py migrate --settings=core.settings_production
 
+# Criar tabela de cache (se não existir)
+echo "💾 Configurando cache..."
+python manage.py createcachetable --settings=core.settings_production 2>/dev/null || true
+
 # Coletar arquivos estáticos
 echo "📁 Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput --settings=core.settings_production --clear

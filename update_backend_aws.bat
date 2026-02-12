@@ -17,9 +17,12 @@ if not exist "skillio-key.pem" (
 )
 
 echo ✅ Executando atualização no servidor...
+echo    - Limpando mudanças locais
+echo    - Baixando código do GitHub
+echo    - Aplicando deploy
 echo.
 
-ssh -i skillio-key.pem ubuntu@3.142.80.221 "cd ~/Projeto_integrador && git pull origin Renan---AWS-Free-Tier && ./deploy_scripts/update_backend.sh"
+ssh -i skillio-key.pem ubuntu@3.142.80.221 "cd ~/Projeto_integrador && git fetch --all && git reset --hard origin/Renan---AWS-Free-Tier && git clean -fd && ./deploy_scripts/update_backend.sh"
 
 if errorlevel 1 (
     echo.

@@ -115,6 +115,20 @@ DATABASES['default']['OPTIONS'] = {
 DATABASES['default']['CONN_MAX_AGE'] = 0  # Desabilita pool persistente para evitar conexões travadas
 
 
+# Cache Configuration
+# https://docs.djangoproject.com/en/5.2/topics/cache/
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
+        'TIMEOUT': 600,  # 10 minutos (padrão para códigos de redefinição)
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
