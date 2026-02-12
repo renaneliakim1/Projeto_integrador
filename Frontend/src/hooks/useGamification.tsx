@@ -134,17 +134,33 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // Cálculo local do tempo até a próxima vida com base no timestamp do servidor
-                if (gam.hearts_last_refill && serverHearts < 5) {
-                    try {
-                        const lastRefill = new Date(gam.hearts_last_refill);
-                        const now = new Date();
-                        const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
-                        const REFILL_SECONDS = 3 * 60; // 3 minutos por vida
-                        const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
-                        const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
-                        setNextRefillInSeconds(secondsToNext);
-                    } catch (e) {
-                        setNextRefillInSeconds(null);
+                if (serverHearts < 5) {
+                    if (gam.hearts_last_refill) {
+                        try {
+                            const lastRefill = new Date(gam.hearts_last_refill);
+                            const now = new Date();
+                            const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
+                            const REFILL_SECONDS = 3 * 60; // 3 minutos por vida
+                            const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
+                            const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
+                            setNextRefillInSeconds(secondsToNext);
+                        } catch (e) {
+                            // Se parsing falhar, tenta obter do endpoint de refill que é a fonte de verdade
+                            try {
+                                const refillResp = await apiClient.post('/study/gamification/refill/');
+                                setNextRefillInSeconds(refillResp.data.next_in_seconds ?? null);
+                            } catch (e2) {
+                                setNextRefillInSeconds(null);
+                            }
+                        }
+                    } else {
+                        // Se não houver timestamp mas o usuário tem menos que o máximo, consulta o endpoint de refill
+                        try {
+                            const refillResp = await apiClient.post('/study/gamification/refill/');
+                            setNextRefillInSeconds(refillResp.data.next_in_seconds ?? null);
+                        } catch (e) {
+                            setNextRefillInSeconds(null);
+                        }
                     }
                 } else {
                     setNextRefillInSeconds(null);
@@ -384,18 +400,32 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                         });
                     }
                     
-                    // Recalcula próximo refill
-                    if (gam.hearts_last_refill && serverHearts < 5) {
-                        try {
-                            const lastRefill = new Date(gam.hearts_last_refill);
-                            const now = new Date();
-                            const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
-                            const REFILL_SECONDS = 3 * 60;
-                            const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
-                            const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
-                            setNextRefillInSeconds(secondsToNext);
-                        } catch (e) {
-                            setNextRefillInSeconds(null);
+                    // Recalcula próximo refill. Se não houver timestamp, consulta o endpoint de refill
+                    if (serverHearts < 5) {
+                        if (gam.hearts_last_refill) {
+                            try {
+                                const lastRefill = new Date(gam.hearts_last_refill);
+                                const now = new Date();
+                                const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
+                                const REFILL_SECONDS = 3 * 60;
+                                const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
+                                const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
+                                setNextRefillInSeconds(secondsToNext);
+                            } catch (e) {
+                                try {
+                                    const refillResp = await apiClient.post('/study/gamification/refill/');
+                                    setNextRefillInSeconds(refillResp.data.next_in_seconds ?? null);
+                                } catch (e2) {
+                                    setNextRefillInSeconds(null);
+                                }
+                            }
+                        } else {
+                            try {
+                                const refillResp = await apiClient.post('/study/gamification/refill/');
+                                setNextRefillInSeconds(refillResp.data.next_in_seconds ?? null);
+                            } catch (e) {
+                                setNextRefillInSeconds(null);
+                            }
                         }
                     } else {
                         setNextRefillInSeconds(null);

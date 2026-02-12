@@ -287,8 +287,15 @@ Para desenvolvimento, você pode executar cada parte separadamente.
 
    
     ```bash
-   python manage.py runserver 192.168.206.160:800
+   python manage.py runserver 192.168.206.160:8000
    ```
+   
+
+   
+    ```bash
+   python manage.py runserver 172.27.240.1:8000
+   ```
+   
 
    
 

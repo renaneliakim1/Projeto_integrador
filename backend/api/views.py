@@ -61,7 +61,33 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
             'user_quests__quest',
             'performance__subject__area'
         ).get(pk=self.request.user.pk)
-        
+        # Garantir que as vidas sejam recalculadas com base no tempo decorrido
+        try:
+            from django.conf import settings as _settings
+            MAX_HEARTS = 5
+            REFILL_MINUTES = getattr(_settings, 'GAMIFICATION_REFILL_MINUTES', 3)
+            gam = getattr(user, 'gamification', None)
+            if gam is not None:
+                # Só tenta recalcular se existe um timestamp de recarga
+                if gam.hearts < MAX_HEARTS and gam.hearts_last_refill is not None:
+                    now = timezone.now()
+                    elapsed = now - gam.hearts_last_refill
+                    elapsed_minutes = int(elapsed.total_seconds() // 60)
+                    hearts_to_add = elapsed_minutes // REFILL_MINUTES
+                    if hearts_to_add > 0:
+                        new_hearts = min(MAX_HEARTS, gam.hearts + hearts_to_add)
+                        minutes_used = hearts_to_add * REFILL_MINUTES
+                        remainder_seconds = int(elapsed.total_seconds() - (minutes_used * 60))
+                        gam.hearts = new_hearts
+                        if gam.hearts >= MAX_HEARTS:
+                            gam.hearts_last_refill = None
+                        else:
+                            gam.hearts_last_refill = now - timezone.timedelta(seconds=remainder_seconds)
+                        gam.save()
+        except Exception:
+            # Não falhar a view por causa de problemas no recalculo de vidas
+            pass
+
         return user
 
     def update(self, request, *args, **kwargs):
