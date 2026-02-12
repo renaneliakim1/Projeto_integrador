@@ -20,22 +20,29 @@ export const useLessonAI = (
 
   const generateLessonContent = useCallback(async () => {
     if (!enabled) {
+      console.log('⏸️ useLessonAI: Desabilitado (enabled=false)');
       setGeneratedLesson(null);
       setLoading(false);
       return;
     }
     if (!API_KEY) {
-      setError(
-        "Google Generative Language API Key não está definida. Configure VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY no .env."
-      );
+      const fallbackLesson: Lesson = {
+        lesson: `Estude sobre ${subject} explorando conceitos fundamentais e práticas recomendadas para o nível ${educationalLevel}. Este é um tópico importante que requer atenção aos detalhes e compreensão prática.`
+      };
+      console.warn('⚠️ API Key não configurada, usando fallback');
+      setGeneratedLesson(fallbackLesson);
+      setError("Configuração de API pendente. Usando conteúdo alternativo.");
+      setLoading(false);
       return;
     }
     if (!subject || !educationalLevel) {
+      console.warn('⚠️ useLessonAI: Subject ou educationalLevel vazio', { subject, educationalLevel });
       setGeneratedLesson(null);
       setLoading(false);
       return;
     }
 
+    console.log('🎓 Gerando aula:', { subject, educationalLevel });
     setLoading(true);
     setError(null);
 
@@ -78,6 +85,7 @@ export const useLessonAI = (
       }
 
       setGeneratedLesson(parsedLesson);
+      console.log('✅ Aula gerada com sucesso:', { subject, lessonLength: parsedLesson.lesson?.length });
     } catch (err: unknown) {
       let msg = "Erro desconhecido";
       if (
@@ -88,8 +96,15 @@ export const useLessonAI = (
       ) {
         msg = (err as { message: string }).message;
       }
-      setError(`Falha ao gerar a aula: ${msg}`);
-      setGeneratedLesson(null);
+      console.error('❌ Erro ao gerar aula:', { subject, error: msg });
+      
+      // Fallback em caso de erro
+      const fallbackLesson: Lesson = {
+        lesson: `Explore os conceitos fundamentais de ${subject} para o nível ${educationalLevel}. Este tópico abrange aspectos teóricos e práticos importantes para sua formação acadêmica. Recomendamos assistir aos vídeos sugeridos abaixo para uma compreensão mais aprofundada.`
+      };
+      
+      setError(`Erro ao gerar aula personalizada. Usando conteúdo alternativo.`);
+      setGeneratedLesson(fallbackLesson);
     } finally {
       setLoading(false);
     }
