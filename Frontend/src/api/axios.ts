@@ -10,8 +10,9 @@ const getBaseURL = () => {
         return import.meta.env.VITE_API_URL;
     }
     
-    // Se estiver acessando via IP da rede (ex: 192.168.0.89)
-    if (hostname.startsWith('192.168') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+    // 🌐 Apenas rede WiFi local (192.168.x.x e 10.x.x.x)
+    // Ignora IPs do WSL/Docker (172.x.x.x)
+    if (hostname.startsWith('192.168') || hostname.startsWith('10.')) {
         const baseURL = `http://${hostname}:8000/api/v1`;
         console.log('🌐 Modo Rede - Base URL:', baseURL);
         return baseURL;

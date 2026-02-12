@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: true, // 🌐 Permite rede mas filtra IPs automaticamente
     port: 8080,
   },
   plugins: [
