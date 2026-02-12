@@ -86,6 +86,28 @@ const Game = () => {
 
   const educationalLevel = localStorage.getItem('userEducationalLevel') || 'medio';
 
+  // Sistema de sons do jogo
+  const playSound = useCallback((soundType: 'correct' | 'wrong' | 'victory' | 'defeat') => {
+    try {
+      const soundPaths = {
+        correct: '/sounds/correct.mp3',
+        wrong: '/sounds/wrong.mp3',
+        victory: '/sounds/victory.mp3',
+        defeat: '/sounds/defeat.mp3'
+      };
+      
+      const audio = new Audio(soundPaths[soundType]);
+      audio.volume = 0.5; // Volume ajustável (0.0 a 1.0)
+      audio.play().catch(err => {
+        // Silenciosamente ignora erros (ex: autoplay bloqueado pelo navegador)
+        console.log('Audio playback prevented:', err);
+      });
+    } catch (error) {
+      // Ignora erros de som para não quebrar o jogo
+      console.log('Sound error:', error);
+    }
+  }, []);
+
   const { generatedQuestions, loading, error, refetch } = useGenerativeAI(
     subject,
     educationalLevel,
@@ -117,6 +139,7 @@ const Game = () => {
     
     const isCorrect = answerIndex === questions[currentQuestion]?.correct;
   if (isCorrect) {
+    playSound('correct'); // Som de acerto
     setSessionAnswers(prev => ({ ...prev, correct: prev.correct + 1 }));
     setScore(prevScore => prevScore + 10);
     setPendingScore(prev => prev + 10);
@@ -131,11 +154,14 @@ const Game = () => {
         setSelectedAnswer(null);
         setShowResult(false);
       } else {
+        // Toca som de vitória IMEDIATAMENTE antes de mostrar tela
+        playSound('victory');
         setGameOver(true);
       }
     }, 500);
     
     } else {
+      playSound('wrong'); // Som de erro
       setSessionAnswers(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
       
       // Captura vidas ANTES de perder
@@ -174,6 +200,8 @@ const Game = () => {
       // Se perdeu, PARA AQUI e não avança
       if (shouldEndByMistakes || shouldEndByHearts) {
         console.log('❌ GAME OVER TRIGGERED - Vai mostrar tela de derrota');
+        // Toca som de derrota IMEDIATAMENTE
+        playSound('defeat');
         // Marca o motivo da derrota ANTES de setar gameOver
         const reason = shouldEndByMistakes ? 'mistakes' : 'hearts';
         setLossReason(reason);
@@ -195,11 +223,13 @@ const Game = () => {
           setSelectedAnswer(null);
           setShowResult(false);
         } else {
+          // Toca som de vitória IMEDIATAMENTE antes de mostrar tela
+          playSound('victory');
           setGameOver(true);
         }
       }, 500);
     }
-  }, [currentQuestion, questions, toast, loseHeart, isTrailGame, mistakes, hearts, showResult, gameOver]);
+  }, [currentQuestion, questions, toast, loseHeart, isTrailGame, mistakes, hearts, showResult, gameOver, playSound]);
 
   useEffect(() => {
     if (timeLeft > 0 && !showResult && !gameOver && questions.length > 0) {
@@ -290,7 +320,7 @@ const Game = () => {
     };
 
     handleGameOver();
-  }, [gameOver, gameOverProcessed, blocoId, isTrailGame, completeBlock, isBlockCompleted, toast, pendingScore, pendingXp, addXp, mistakes, subject, sessionAnswers, updatePerformance, hearts, lossReason]);
+  }, [gameOver, gameOverProcessed, blocoId, isTrailGame, completeBlock, isBlockCompleted, toast, pendingScore, pendingXp, addXp, mistakes, subject, sessionAnswers, updatePerformance, hearts, lossReason, playSound]);
 
   const resetGame = () => {
       refetch();

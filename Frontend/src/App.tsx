@@ -53,29 +53,33 @@ const App = () => (
             <div className="min-h-screen flex flex-col justify-between pt-20">
               <main className="flex-1">
                 <Routes>
+                  {/* Rotas Públicas */}
                   <Route path="/" element={<Index />} />
-                  <Route path="/trilha" element={<Trilha />} />
                   <Route path="/subjects" element={<Subjects />} />
-                  <Route path="/game/:blocoId" element={<Game />} />
-                  <Route path="/lesson/:subjectId" element={<Lesson />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/:userId" element={<PublicProfile />} />
-                  <Route path="/edit-profile" element={<EditProfile />} />
                   <Route path="/ranking" element={<Ranking />} />
-                  <Route path="/settings" element={<Settings />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/termos-condicoes" element={<TermosCondicoesDetalhado />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/about" element={<About />} />
-                  <Route path="/quiz-nivelamento" element={<QuizNivelamento />} />
-                  <Route path="/quiz-rapido" element={<QuickQuiz />} />
                   <Route path="/suporte" element={<Suporte />} />
-                  <Route path="/study-plan" element={<StudyPlan />} />
+                  
+                  {/* Rotas Protegidas - Requerem Autenticação */}
                   <Route element={<PrivateRoute />}>
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/trilha" element={<Trilha />} />
+                    <Route path="/lesson/:subjectId" element={<Lesson />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile/:userId" element={<PublicProfile />} />
+                    <Route path="/edit-profile" element={<EditProfile />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/quiz-nivelamento" element={<QuizNivelamento />} />
+                    <Route path="/quiz-rapido" element={<QuickQuiz />} />
+                    <Route path="/study-plan" element={<StudyPlan />} />
+                    <Route path="/game/:blocoId" element={<Game />} />
                   </Route>
+                  
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
