@@ -44,15 +44,15 @@ fi
 
 # Rodar migrações
 echo "🔄 Aplicando migrações..."
-python manage.py migrate --settings=core.settings_production
+python manage.py migrate
 
 # Criar tabela de cache (se não existir)
 echo "💾 Configurando cache..."
-python manage.py createcachetable --settings=core.settings_production 2>/dev/null || true
+python manage.py createcachetable 2>/dev/null || true
 
 # Coletar arquivos estáticos
 echo "📁 Coletando arquivos estáticos..."
-python manage.py collectstatic --noinput --settings=core.settings_production --clear
+python manage.py collectstatic --noinput --clear
 
 # Reiniciar serviço
 echo "🔄 Reiniciando serviço..."
