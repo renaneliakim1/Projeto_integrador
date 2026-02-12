@@ -35,6 +35,19 @@ cd backend
 echo "📦 Atualizando dependências..."
 pip install --upgrade pip
 pip install --upgrade --force-reinstall setuptools
+
+# Verificar se pkg_resources está disponível
+if ! python -c "import pkg_resources" 2>/dev/null; then
+    echo "⚠️  pkg_resources não encontrado. Recriando ambiente virtual..."
+    cd ~
+    rm -rf ~/venv
+    python3 -m venv ~/venv
+    source ~/venv/bin/activate
+    cd ~/Projeto_integrador/backend
+    pip install --upgrade pip
+    pip install setuptools
+fi
+
 pip install -r requirements_prod.txt
 
 # Verificar se dependências foram instaladas
