@@ -263,6 +263,20 @@ const Game = () => {
         console.warn('updatePerformance failed', e);
       }
 
+      // Regra de negócio: se o jogador perdeu por erros ou por ficar sem vidas,
+      // não salvar XP nem mostrar toasts de sucesso. Limpa pending XP/score.
+      if (lossReason) {
+        console.log('🏴 handleGameOver: jogador perdeu — descartando XP e evitando persistência', lossReason);
+        try {
+          setPendingScore(0);
+          setPendingXp(0);
+          setScore(0);
+        } catch (e) {
+          console.warn('Erro ao limpar XP pendente após derrota', e);
+        }
+        return; // Não persistir XP nem mostrar alertas de sucesso
+      }
+
       if (blocoId && isTrailGame) {
         // Verifica se o jogador venceu (não há lossReason E ainda tem vidas)
         if (!lossReason && hearts > 0 && !isBlockCompleted(blocoId)) {
