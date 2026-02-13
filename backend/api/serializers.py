@@ -154,6 +154,7 @@ class UserQuestSerializer(serializers.ModelSerializer):
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):
     """Serializer para exibir os detalhes do perfil do usuário."""
+    # Retorna apenas o nome do arquivo da foto (campo 'foto')
     foto = serializers.SerializerMethodField()
     gamification = GamificationSerializer(read_only=True, source='user.gamification')
     achievements = UserAchievementSerializer(many=True, read_only=True, source='user.achievements')
@@ -166,7 +167,8 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
 
     def get_foto(self, obj):
         if obj.foto:
-            return f"data:image/png;base64,{base64.b64encode(obj.foto).decode('utf-8')}"
+            # Se for um FileField/ImageField, retorna apenas o caminho relativo (nome do arquivo)
+            return obj.foto.name
         return None
 
     def get_daily_quests(self, obj):
