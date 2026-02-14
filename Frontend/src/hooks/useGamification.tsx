@@ -391,12 +391,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                         detail: { type: 'hearts', hearts: serverHearts } 
                     }));
                     
-                    // Toast amigável quando ganhar vidas
+                    // Toast amigável quando ganhar vidas (fundo sólido verde)
                     if (serverHearts > hearts) {
                         toast({ 
                             title: '❤️ Vida Recuperada!', 
                             description: `Você agora tem ${serverHearts} ${serverHearts === 1 ? 'vida' : 'vidas'}!`, 
-                            className: 'bg-red-500/10 border-red-500/50'
+                            className: 'bg-green-500 border-green-500 text-white'
                         });
                     }
                     
