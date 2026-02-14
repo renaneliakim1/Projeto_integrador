@@ -331,6 +331,11 @@ const Header = () => {
                             Ranking
                           </Link>
                         )}
+                        {location.pathname !== "/faq" && (
+                          <Link to="/faq" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
+                            FAQ
+                          </Link>
+                        )}
                         {location.pathname !== "/about" && (
                           <Link to="/about" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
                             Sobre Nós
