@@ -69,22 +69,86 @@ const Header = () => {
     };
   }, [refetchGamificationData]);
 
-  // Atualiza countdown local a partir de nextRefillInSeconds
+  // Cronômetro local de recarga: quando vidas === 0 mostramos cronômetro de 15s
+  // Cronômetro local de recarga: quando vidas === 0 mostramos cronômetro de 15s
+  // Decrementa até 0; quando chega a 0, aguardamos a resposta de `refillHearts()`
+  // e ajustamos o contador conforme `hearts` ou `next_in_seconds` retornados.
   useEffect(() => {
+    const REFILL_SECONDS = 15;
     let interval: number | undefined;
-    if (nextRefillInSeconds && nextRefillInSeconds > 0 && hearts < 5) {
-      setCountdown(nextRefillInSeconds);
+
+    if (isAuthenticated && hearts === 0) {
+      setCountdown(REFILL_SECONDS);
       interval = window.setInterval(() => {
         setCountdown(prev => {
-          if (prev === null || prev <= 0) return null;
-          return prev - 1;
+          if (prev === null) return null;
+          // decrementa até 0 (mantém 0 como sinal)
+          return Math.max(0, prev - 1);
         });
       }, 1000);
     } else {
       setCountdown(null);
     }
+
     return () => { if (interval) window.clearInterval(interval); };
-  }, [nextRefillInSeconds, hearts]);
+  }, [isAuthenticated, hearts]);
+
+  // Quando countdown atingir exatamente 0, tenta refill e ajusta comportamento conforme resposta
+  useEffect(() => {
+    if (countdown !== 0) return;
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        const resp = await refillHearts();
+        if (!mounted) return;
+
+        // Se o servidor já devolver hearts > 0, escondemos o cronômetro
+        if (resp && typeof resp.hearts === 'number') {
+          // Se atingiu o máximo, encerra ciclo e atualiza UI
+          if (resp.hearts >= 5) {
+            setCountdown(null);
+            refetchGamificationData();
+            return;
+          }
+          // Ainda não atingiu o máximo: agendamos próximo intervalo.
+          const REFILL_SECONDS = 15;
+          setCountdown(typeof resp.next_in_seconds === 'number' ? resp.next_in_seconds : REFILL_SECONDS);
+          return;
+        }
+
+        // Se o servidor indicar próximo tempo (em segundos), use-o
+        if (resp && typeof resp.next_in_seconds === 'number') {
+          setCountdown(resp.next_in_seconds);
+          return;
+        }
+
+        // Caso o refill não tenha liberado vida e não retornou next_in_seconds,
+        // usa o padrão local de 15s antes de tentar novamente
+        setCountdown(15);
+      } catch (err) {
+        console.error('Erro ao tentar recarregar vidas:', err);
+        setCountdown(null);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [countdown, refillHearts, refetchGamificationData]);
+
+  // Background refill loop: enquanto hearts < 5, tenta recarregar a cada 15 segundos
+  useEffect(() => {
+    const REFILL_MS = 15 * 1000;
+    if (!isAuthenticated || hearts >= 5) return;
+
+    let intervalId: number | undefined;
+    intervalId = window.setInterval(() => {
+      // chamada periódica ao endpoint de refill; o servidor é a fonte da verdade
+      refillHearts().catch(err => console.error('Background refill failed', err));
+    }, REFILL_MS);
+
+    return () => { if (intervalId) window.clearInterval(intervalId); };
+  }, [isAuthenticated, hearts, refillHearts]);
 
   const handleLogout = () => {
     navigate('/');
@@ -131,21 +195,23 @@ const Header = () => {
                     <>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                            <Heart className="w-4 h-4" />
-                            <span>{hearts}</span>
-                            {hearts <= 0 && countdown !== null && (
-                              <button onClick={() => refillHearts()} className="text-xs text-muted-foreground underline">
-                                {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
-                              </button>
-                            )}
+                          <div className="px-2 py-0.5 rounded-md backdrop-blur-none bg-card/80">
+                            <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                              <Heart className="w-4 h-4" />
+                              <span>{hearts}</span>
+                              {hearts === 0 && countdown !== null && (
+                                <button onClick={() => refillHearts()} className="text-xs text-muted-foreground underline">
+                                  {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <div>
                             <p>{hearts} vidas restantes</p>
-                            {hearts <= 0 && countdown !== null && <p>Próxima vida em {Math.floor(countdown / 60)}m {countdown % 60}s</p>}
-                            {hearts <= 0 && countdown === null && <p>Verificando recarga...</p>}
+                            {hearts === 0 && countdown !== null && <p>Próxima vida em {Math.floor(countdown / 60)}m {countdown % 60}s</p>}
+                            {hearts === 0 && countdown === null && <p>Verificando recarga...</p>}
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -165,9 +231,11 @@ const Header = () => {
                       <div className="flex items-center gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1 text-sm font-bold text-amber-400">
-                              <Star className="w-4 h-4" />
-                              <span>{level}</span>
+                            <div className="px-2 py-0.5 rounded-md backdrop-blur-none bg-card/80">
+                              <div className="flex items-center gap-1 text-sm font-bold text-amber-400">
+                                <Star className="w-4 h-4" />
+                                <span>{level}</span>
+                              </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent><p>{xp.toFixed(0)} / {xpForNextLevel} XP</p></TooltipContent>
@@ -245,9 +313,11 @@ const Header = () => {
                             <>
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Vidas</span>
-                                <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                  <Heart className="w-4 h-4" />
-                                  <span>{hearts}</span>
+                                <div className="px-2 py-0.5 rounded-md backdrop-blur-none bg-card/80">
+                                  <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                    <Heart className="w-4 h-4" />
+                                    <span>{hearts}</span>
+                                  </div>
                                 </div>
                               </div>
                               

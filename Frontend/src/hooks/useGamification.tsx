@@ -42,7 +42,7 @@ interface GamificationContextType {
     isBlockCompleted: (blockId: string) => boolean;
     loseHeart: () => void;
     resetHearts: () => void;
-    refillHearts: () => void;
+    refillHearts: () => Promise<any | void>;
     refetchGamificationData: () => void;
 }
 
@@ -140,7 +140,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                             const lastRefill = new Date(gam.hearts_last_refill);
                             const now = new Date();
                             const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
-                            const REFILL_SECONDS = 3 * 60; // 3 minutos por vida
+                            const REFILL_SECONDS = 15; // 15 segundos por vida (ajustado para testes/UX)
                             const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
                             const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
                             setNextRefillInSeconds(secondsToNext);
@@ -299,13 +299,15 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     }, [isAuthenticated]);
 
     const refillHearts = useCallback(async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated) return null;
         try {
             const resp = await apiClient.post('/study/gamification/refill/');
             setHearts(resp.data.hearts);
             setNextRefillInSeconds(resp.data.next_in_seconds ?? null);
+            return resp.data;
         } catch (e) {
             console.error('Failed to refill hearts', e);
+            throw e;
         }
     }, [isAuthenticated]);
 
@@ -407,7 +409,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
                                 const lastRefill = new Date(gam.hearts_last_refill);
                                 const now = new Date();
                                 const elapsedSeconds = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
-                                const REFILL_SECONDS = 3 * 60;
+                                const REFILL_SECONDS = 15;
                                 const secondsSinceLastTick = elapsedSeconds % REFILL_SECONDS;
                                 const secondsToNext = REFILL_SECONDS - secondsSinceLastTick;
                                 setNextRefillInSeconds(secondsToNext);

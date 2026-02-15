@@ -236,6 +236,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 # Gamification defaults
 # Number of minutes required to refill 1 heart when the user is out of lives
 GAMIFICATION_REFILL_MINUTES = int(os.environ.get('GAMIFICATION_REFILL_MINUTES', '3'))
+# Prefer explicit seconds setting for gamification refill; fallback to minutes above.
+GAMIFICATION_REFILL_SECONDS = int(os.environ.get('GAMIFICATION_REFILL_SECONDS', '15'))
 
 # --- Supabase Storage Configuration (using S3 backend) --- (Commented out since saving images in DB)
 

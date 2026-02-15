@@ -65,19 +65,25 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         try:
             from django.conf import settings as _settings
             MAX_HEARTS = 5
-            REFILL_MINUTES = getattr(_settings, 'GAMIFICATION_REFILL_MINUTES', 3)
+            # Prefer explicit seconds setting; fallback to minutes setting for backwards compat.
+            if hasattr(_settings, 'GAMIFICATION_REFILL_SECONDS'):
+                REFILL_SECONDS = getattr(_settings, 'GAMIFICATION_REFILL_SECONDS')
+            else:
+                REFILL_MINUTES = getattr(_settings, 'GAMIFICATION_REFILL_MINUTES', None)
+                REFILL_SECONDS = (REFILL_MINUTES * 60) if REFILL_MINUTES is not None else 15
+
             gam = getattr(user, 'gamification', None)
             if gam is not None:
                 # Só tenta recalcular se existe um timestamp de recarga
                 if gam.hearts < MAX_HEARTS and gam.hearts_last_refill is not None:
                     now = timezone.now()
                     elapsed = now - gam.hearts_last_refill
-                    elapsed_minutes = int(elapsed.total_seconds() // 60)
-                    hearts_to_add = elapsed_minutes // REFILL_MINUTES
+                    elapsed_seconds = int(elapsed.total_seconds())
+                    hearts_to_add = elapsed_seconds // REFILL_SECONDS
                     if hearts_to_add > 0:
                         new_hearts = min(MAX_HEARTS, gam.hearts + hearts_to_add)
-                        minutes_used = hearts_to_add * REFILL_MINUTES
-                        remainder_seconds = int(elapsed.total_seconds() - (minutes_used * 60))
+                        seconds_used = hearts_to_add * REFILL_SECONDS
+                        remainder_seconds = int(elapsed_seconds - seconds_used)
                         gam.hearts = new_hearts
                         if gam.hearts >= MAX_HEARTS:
                             gam.hearts_last_refill = None
@@ -440,7 +446,13 @@ class RefillHeartsView(generics.GenericAPIView):
         user = request.user
         gamification = user.gamification
         MAX_HEARTS = 5
-        REFILL_MINUTES_PER_HEART = getattr(settings, 'GAMIFICATION_REFILL_MINUTES', 3)
+
+        # Support seconds-based configuration for refill, with backwards compat to minutes.
+        if hasattr(settings, 'GAMIFICATION_REFILL_SECONDS'):
+            REFILL_SECONDS = getattr(settings, 'GAMIFICATION_REFILL_SECONDS')
+        else:
+            REFILL_MINUTES_PER_HEART = getattr(settings, 'GAMIFICATION_REFILL_MINUTES', None)
+            REFILL_SECONDS = (REFILL_MINUTES_PER_HEART * 60) if REFILL_MINUTES_PER_HEART is not None else 15
 
         now = timezone.now()
 
@@ -454,17 +466,17 @@ class RefillHeartsView(generics.GenericAPIView):
         if gamification.hearts_last_refill is None:
             gamification.hearts_last_refill = now
             gamification.save()
-            return Response({'hearts': gamification.hearts, 'next_in_seconds': REFILL_MINUTES_PER_HEART * 60}, status=status.HTTP_200_OK)
+            return Response({'hearts': gamification.hearts, 'next_in_seconds': REFILL_SECONDS}, status=status.HTTP_200_OK)
 
         elapsed = now - gamification.hearts_last_refill
-        elapsed_minutes = int(elapsed.total_seconds() // 60)
-        # Quantas vidas recuperar
-        hearts_to_add = elapsed_minutes // REFILL_MINUTES_PER_HEART
+        elapsed_seconds = int(elapsed.total_seconds())
+        # Quantas vidas recuperar com base em segundos
+        hearts_to_add = elapsed_seconds // REFILL_SECONDS
         if hearts_to_add > 0:
             new_hearts = min(MAX_HEARTS, gamification.hearts + hearts_to_add)
             # calcula quanto tempo sobrou após aplicar a recarga
-            minutes_used = hearts_to_add * REFILL_MINUTES_PER_HEART
-            remainder_seconds = int(elapsed.total_seconds() - (minutes_used * 60))
+            seconds_used = hearts_to_add * REFILL_SECONDS
+            remainder_seconds = int(elapsed_seconds - seconds_used)
             gamification.hearts = new_hearts
             # Se já estiver cheio, limpa o timestamp, senão atualiza para o tempo do último tick aplicado
             if gamification.hearts >= MAX_HEARTS:
@@ -474,7 +486,7 @@ class RefillHeartsView(generics.GenericAPIView):
             gamification.save()
         else:
             # Ainda não recuperou nenhuma vida; calcula quanto falta até o próximo
-            remainder_seconds = REFILL_MINUTES_PER_HEART * 60 - int(elapsed.total_seconds())
+            remainder_seconds = REFILL_SECONDS - int(elapsed_seconds)
 
         next_in = None if gamification.hearts >= MAX_HEARTS else remainder_seconds
         return Response({'hearts': gamification.hearts, 'next_in_seconds': next_in}, status=status.HTTP_200_OK)
