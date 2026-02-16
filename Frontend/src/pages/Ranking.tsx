@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import resolveAvatarSrc from '@/lib/avatar';
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/ui/game-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +21,8 @@ const getPositionIcon = (position: number) => {
   }
 };
 
+// Avatar src resolution centralizada em `src/lib/avatar.ts`
+
 // Card de um jogador no ranking
 const RankingCard = ({ player, isCurrentUser }: { player: RankedUser, isCurrentUser: boolean }) => (
   <Link to={`/profile/${player.id}`}>
@@ -30,16 +33,10 @@ const RankingCard = ({ player, isCurrentUser }: { player: RankedUser, isCurrentU
             {getPositionIcon(player.rank)}
           </div>
           <Avatar className="w-12 h-12">
-            <AvatarImage 
-              src={
-                player.avatar
-                  ? player.avatar.startsWith('http')
-                    ? player.avatar
-                    : `${import.meta.env.VITE_AVATAR_URL || 'https://d3lxa11agu4uln.cloudfront.net/media/'}${player.avatar}`
-                  : undefined
-              }
-              alt={player.name} 
-              className="object-cover" 
+            <AvatarImage
+              src={resolveAvatarSrc(player.avatar)}
+              alt={player.name}
+              className="object-cover"
             />
             <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
@@ -109,17 +106,11 @@ const RankingList = ({
               <GameCard className={`p-6 text-center border-2 hover:scale-105 transition-transform cursor-pointer ${player.rank === 1 ? 'border-yellow-400' : player.rank === 2 ? 'border-gray-300' : 'border-amber-500'}`}>
                 <div className="mb-3">{getPositionIcon(player.rank)}</div>
                 <Avatar className="w-20 h-20 mx-auto mb-3">
-                  <AvatarImage 
-                    src={
-                      player.avatar
-                        ? player.avatar.startsWith('http')
-                          ? player.avatar
-                          : `${import.meta.env.VITE_AVATAR_URL || 'https://d3lxa11agu4uln.cloudfront.net/media/'}${player.avatar}`
-                        : undefined
-                    }
-                    alt={player.name} 
-                    className="object-cover" 
-                  />
+                    <AvatarImage
+                      src={resolveAvatarSrc(player.avatar)}
+                      alt={player.name}
+                      className="object-cover"
+                    />
                   <AvatarFallback className="text-2xl">{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <h3 className="font-bold text-lg">{player.name}</h3>
