@@ -651,32 +651,39 @@ const Game = () => {
               {question.options.map((option: string, index: number) => {
                 let variant: "default" | "success" | "destructive" = "default";
                 let bgClass = "";
-                
+                // O destaque só aparece após seleção
                 if (showResult) {
                   if (index === question.correct) {
                     variant = "success";
-                    bgClass = "bg-green-500 hover:bg-green-500 text-white border-green-600";
-                  } else if (index === selectedAnswer) {
+                    bgClass = "bg-green-500 text-white border-green-600";
+                  } else if (selectedAnswer === index) {
                     variant = "destructive";
-                    bgClass = "bg-red-500 hover:bg-red-500 text-white border-red-600";
+                    bgClass = "bg-red-500 text-white border-red-600";
+                  } else {
+                    bgClass = "bg-background border-muted text-muted-foreground";
                   }
+                } else {
+                  // Sem hover, sem destaque, sem animação
+                  bgClass = "bg-background border-muted text-foreground";
                 }
-                
                 return (
-                  <Button
+                  <button
                     key={index}
-                    variant={variant === "default" ? "outline" : variant}
-                    className={cn(
-                      "min-h-[3.5rem] sm:h-16 text-sm sm:text-base md:text-lg justify-start px-3 sm:px-4 md:px-6 transition-all duration-300 whitespace-normal text-left leading-tight py-2",
-                      !showResult && "hover:bg-primary/10 hover:border-primary hover:scale-[1.02] hover:shadow-md",
-                      bgClass
-                    )}
-                    onClick={() => !showResult && handleAnswer(index)}
-                    disabled={showResult}
+                    className={`w-full p-3 sm:p-4 rounded-lg border font-medium text-base sm:text-lg transition-none ${bgClass}`}
+                    style={{
+                      boxShadow: 'none',
+                      color: undefined,
+                      backgroundColor: undefined,
+                      borderColor: undefined,
+                      transform: 'none',
+                      animationDuration: undefined,
+                    }}
+                    disabled={showResult || gameOver}
+                    onClick={() => handleAnswer(index)}
                   >
                     <span className="font-bold mr-2 sm:mr-3 md:mr-4 flex-shrink-0">{String.fromCharCode(65 + index)}</span>
                     <span className="break-words">{option}</span>
-                  </Button>
+                  </button>
                 );
               })}
             </div>
