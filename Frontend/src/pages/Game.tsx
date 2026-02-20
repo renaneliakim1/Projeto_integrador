@@ -645,8 +645,8 @@ const Game = () => {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <GameCard variant="subject" className="p-4 sm:p-6 md:p-8 mb-4 sm:mb-8">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-4 sm:mb-6 md:mb-8 break-words">{question.question}</h2>
+          <GameCard variant="subject" className="p-4 sm:p-6 md:p-8 mb-4 sm:mb-8 text-left">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-left mb-4 sm:mb-6 md:mb-8 break-words">{question.question}</h2>
             <div className="grid gap-3 sm:gap-4">
               {question.options.map((option: string, index: number) => {
                 let variant: "default" | "success" | "destructive" = "default";
@@ -669,7 +669,7 @@ const Game = () => {
                 return (
                   <button
                     key={index}
-                    className={`w-full p-3 sm:p-4 rounded-lg border font-medium text-base sm:text-lg transition-none ${bgClass}`}
+                    className={`w-full p-3 sm:p-4 rounded-lg border font-medium text-base sm:text-lg transition-none text-left flex items-start ${bgClass}`}
                     style={{
                       boxShadow: 'none',
                       color: undefined,
