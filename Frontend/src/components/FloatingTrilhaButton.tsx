@@ -40,12 +40,12 @@ const FloatingTrilhaButton = () => {
   return (
     <Button
       onClick={() => navigate('/trilha')}
-      className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50 bg-white p-2"
+      className="hidden md:flex fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50 bg-transparent p-2"
       size="icon"
       title="Ir para Trilha"
     >
       <img 
-        src="/joystick.png" 
+        src="/joystick.svg" 
         alt="Joystick" 
         className="w-full h-full object-contain"
       />

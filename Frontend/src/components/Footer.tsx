@@ -21,7 +21,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-card/50 border-t py-12 px-4">
+    <footer className="hidden md:block bg-card/50 border-t py-12 px-4">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="col-span-2">
@@ -87,6 +87,7 @@ const Footer = () => {
               <li><Link to="/ranking" className="hover:text-primary transition-colors">Ranking</Link></li>
 {/*               <li><Link to="/profile" className="hover:text-primary transition-colors">Perfil</Link></li> */}
               <li><Link to="/dashboard" className="hover:text-primary transition-colors">Estatísticas</Link></li>
+              <li><Link to="/planos" className="hover:text-primary transition-colors">Planos</Link></li>
               <li className="flex gap-2">
                 <Link to="/suporte" className="hover:text-primary transition-colors">Suporte</Link>
               </li>

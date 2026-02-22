@@ -60,7 +60,7 @@ const calculateStats = (activities: Activity[]) => {
         lastDate = activity.date;
     });
 
-    return { longestPracticeStreak, longestFailureStreak, totalPracticeDays };
+    return { longestPracticeStreak, longestFailureStreak, totalPracticeDays, currentPracticeStreak };
 };
 
 function CustomDayContent(props: DayContentProps) {
@@ -139,6 +139,7 @@ const Dashboard = () => {
   }, [apiActivities]);
 
   const activityStats = useMemo(() => calculateStats(activities), [activities]);
+  const currentStreak = activityStats.currentPracticeStreak ?? streak ?? 0;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -311,10 +312,15 @@ const Dashboard = () => {
           <img src={profilePicture} alt="Foto de perfil" className="w-20 h-20 rounded-full border-2 border-primary shadow-glow object-cover" />
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Bem-vindo, <span className="text-primary">{userName}</span>!</h2>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm sm:text-base">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm sm:text-base">
               <span className="flex items-center text-muted-foreground"><Star className="w-4 h-4 mr-1 text-amber-400"/>Nível: <b className="ml-1 text-primary">{level}</b></span>
               <span className="flex items-center text-muted-foreground"><Trophy className="w-4 h-4 mr-1 text-amber-400"/>Pontos: <b className="ml-1 text-primary">{xp} XP</b></span>
-              {streak && streak > 0 && <span className="flex items-center text-muted-foreground"><Flame className="w-4 h-4 mr-1 text-secondary"/>Sequência: {streak} dias</span>}
+              {currentStreak > 0 && (
+                <span className="flex items-center text-muted-foreground">
+                  <Flame className="w-4 h-4 mr-1 text-secondary"/>
+                  Sequência: {currentStreak} {currentStreak === 1 ? 'dia' : 'dias'}
+                </span>
+              )}
             </div>
           </div>
         </div>

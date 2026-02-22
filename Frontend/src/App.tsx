@@ -14,6 +14,7 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import PrivateRoute from "./components/PrivateRoute";
 import RecaptchaLegalNotice from "./components/RecaptchaLegalNotice";
 import TermosCondicoesDetalhado from "./components/TermosCondicoesDetalhado";
+import PlanosTerms from "./components/PlanosTerms";
 import About from "./pages/About";
 import Dashboard from "./pages/Dashboard";
 import EditProfile from "./pages/EditProfile";
@@ -35,6 +36,7 @@ import StudyPlan from "./pages/StudyPlan";
 import Subjects from "./pages/Subjects";
 import Suporte from "./pages/Suporte";
 import Trilha from "./pages/Trilha";
+import Plans from "@/components/plans";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,8 @@ const App = () => (
                   {/* Rotas Públicas */}
                   <Route path="/" element={<Index />} />
                   <Route path="/subjects" element={<Subjects />} />
+                  <Route path="/planos" element={<Plans />} />
+                  <Route path="/planos/termos" element={<PlanosTerms />} />
                   <Route path="/ranking" element={<Ranking />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />

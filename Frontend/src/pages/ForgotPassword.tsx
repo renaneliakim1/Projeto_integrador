@@ -48,6 +48,39 @@ const ForgotPassword = () => {
 
       const { code, username } = response.data;
 
+      // Verifica se o backend informou que o email não está cadastrado.
+      const backendMessage = (
+        response.data?.error || response.data?.message || response.data?.detail || ""
+      ).toString();
+      const backendLower = backendMessage.toLowerCase();
+
+      if (
+        response.data?.success === false ||
+        response.data?.exists === false ||
+        response.data?.registered === false ||
+        backendLower.includes("not found") ||
+        backendLower.includes("não encontrado") ||
+        backendLower.includes("não cadastrado") ||
+        backendLower.includes("user not found")
+      ) {
+        toast({
+          title: "Email não cadastrado",
+          description: "O email informado não está cadastrado no sistema.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se o backend não retornou um código válido, interrompe e mostra erro genérico
+      if (!code) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível gerar o código de recuperação. Verifique o email digitado e tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // 2. Enviar email usando EmailJS (direto do browser)
       try {
         await emailjs.send(
@@ -88,25 +121,40 @@ const ForgotPassword = () => {
 
     } catch (error) {
       let description = "Ocorreu um erro ao enviar o código. Tente novamente.";
-      
+
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { 
-          response?: { 
-            status: number; 
-            data?: { error?: string; message?: string } 
-          } 
+        const axiosError = error as {
+          response?: {
+            status?: number;
+            data?: { error?: string; message?: string };
+          };
         };
-        
-        if (axiosError.response?.data?.error) {
-          description = axiosError.response.data.error;
-        } else if (axiosError.response?.data?.message) {
-          description = axiosError.response.data.message;
+
+        const status = axiosError.response?.status;
+        const data = axiosError.response?.data;
+        const messageText = (data?.error || data?.message || "").toString();
+        const lower = messageText.toLowerCase();
+
+        // Se o backend retornar 404 ou uma mensagem indicando que o usuário não foi encontrado,
+        // exibimos uma mensagem clara de "Email não cadastrado".
+        if (
+          status === 404 ||
+          lower.includes("not found") ||
+          lower.includes("não encontrado") ||
+          lower.includes("não cadastrado") ||
+          lower.includes("user not found")
+        ) {
+          description = "Email não cadastrado";
+        } else if (data?.error) {
+          description = data.error;
+        } else if (data?.message) {
+          description = data.message;
         }
       }
-      
+
       toast({
-        title: "Erro",
-        description: description,
+        title: description === "Email não cadastrado" ? "Email não cadastrado" : "Erro",
+        description,
         variant: "destructive",
       });
     } finally {

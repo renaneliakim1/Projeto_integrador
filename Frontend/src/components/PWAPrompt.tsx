@@ -194,7 +194,7 @@ export function PWAPrompt() {
 
   // Banner de instalação
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm animate-in slide-in-from-bottom-5 duration-500">
+    <div className="fixed bottom-20 left-4 right-4 z-[9999] md:bottom-4 md:left-auto md:right-4 md:max-w-sm animate-in slide-in-from-bottom-5 duration-500">
       <div className="bg-gradient-to-r from-primary to-secondary p-4 rounded-lg shadow-2xl border border-white/20">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">

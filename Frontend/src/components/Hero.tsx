@@ -164,11 +164,11 @@ const Hero = () => {
             {/* Stats */}
             <div className="flex gap-10 justify-center lg:justify-start pt-6">
               <div className="text-center lg:text-left">
-                <div className="text-3xl md:text-4xl font-bold text-gradient-primary">5+</div>
+                <div className="text-3xl md:text-4xl font-bold text-gradient-primary">100</div>
                 <div className="text-sm text-muted-foreground font-medium">Disciplinas</div>
               </div>
               <div className="text-center lg:text-left">
-                <div className="text-3xl md:text-4xl font-bold text-gradient-primary">1000+</div>
+                <div className="text-3xl md:text-4xl font-bold text-gradient-primary">+1000</div>
                 <div className="text-sm text-muted-foreground font-medium">Perguntas</div>
               </div>
               <div className="text-center lg:text-left">

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BookOpen, Star, Trophy, User, Flame, Heart, Menu, X, UserCircle } from "lucide-react";
+import { Star, Flame, Heart, Menu, X } from "@/components/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGamification } from "@/hooks/useGamification";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +30,7 @@ const Header = () => {
     const [countdown, setCountdown] = useState<number | null>(null);
     const [userProfile, setUserProfile] = useState<{ first_name: string; foto: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showRegisterOption, setShowRegisterOption] = useState(false);
     // Refetch gamification ao sair de /game ou /quiz
     useEffect(() => {
       // Detecta se saiu de uma tela de quiz
@@ -56,6 +57,26 @@ const Header = () => {
     };
 
     fetchUserData();
+  }, [isAuthenticated]);
+
+  // Lê se o usuário clicou em 'Entrar' anteriormente (persistido em localStorage)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('clicked_login');
+      setShowRegisterOption(v === '1');
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // Quando o usuário estiver autenticado, limpa o indicador
+  useEffect(() => {
+    if (isAuthenticated) {
+      try {
+        localStorage.removeItem('clicked_login');
+      } catch (e) {}
+      setShowRegisterOption(false);
+    }
   }, [isAuthenticated]);
 
   // Escuta eventos de atualização de dados de gamificação
@@ -163,6 +184,70 @@ const Header = () => {
     return () => { if (intervalId) window.clearInterval(intervalId); };
   }, [isAuthenticated, hearts, refillHearts]);
 
+  // Mostrar menu inferior também em certos tablets (ex: 1920x1200 com touch)
+  const [showBottomNav, setShowBottomNav] = useState(false);
+  const [forceTopNav, setForceTopNav] = useState(false);
+
+  useEffect(() => {
+    const detectBottomNav = () => {
+      if (typeof window === 'undefined') return;
+      const innerW = window.innerWidth;
+      const innerH = window.innerHeight;
+      const screenW = window.screen?.width ?? 0;
+      const screenH = window.screen?.height ?? 0;
+      const maxScreen = Math.max(screenW, screenH);
+      const minScreen = Math.min(screenW, screenH);
+      const isTouch = typeof navigator !== 'undefined' && ((navigator as any).maxTouchPoints && (navigator as any).maxTouchPoints > 0 || 'ontouchstart' in window);
+      const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+
+      // Calcula resolução física aproximada (CSS pixels * DPR)
+      const physMax = Math.round(maxScreen * dpr);
+      const physMin = Math.round(minScreen * dpr);
+
+      // Tolerância para cobrir pequenas variações/reporting differences
+      const tol = 20;
+      const isExact1920x1200Physical = (Math.abs(physMax - 1920) <= tol && Math.abs(physMin - 1200) <= tol);
+
+      // Regras de visibilidade:
+      // - <= 768px: mostrar bottom nav (mobile)
+      // - 769px..1023px: mostrar APENAS top nav
+      // - >= 1024px: comportamento desktop normal; top nav visível (via lg:flex)
+      // - Exception: dispositivos táteis com resolução física ~1920x1200 -> forçar top nav
+
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[Header] detectBottomNav', { innerW, innerH, screenW, screenH, maxScreen, minScreen, dpr, physMax, physMin, isTouch, isExact1920x1200Physical });
+      } catch (e) {}
+
+      if (innerW <= 768) {
+        setShowBottomNav(true);
+        setForceTopNav(false);
+        return;
+      }
+
+      // 769..1023 -> somente top nav
+      if (innerW >= 769 && innerW <= 1023) {
+        setShowBottomNav(false);
+        setForceTopNav(true);
+        return;
+      }
+
+      // >=1024
+      if (isExact1920x1200Physical && isTouch) {
+        setShowBottomNav(false);
+        setForceTopNav(true);
+        return;
+      }
+
+      setShowBottomNav(false);
+      setForceTopNav(false);
+    };
+
+    detectBottomNav();
+    window.addEventListener('resize', detectBottomNav);
+    return () => window.removeEventListener('resize', detectBottomNav);
+  }, []);
+
   const handleLogout = () => {
     navigate('/');
     logout();
@@ -174,18 +259,20 @@ const Header = () => {
   };
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-2">
         <div className="flex items-center justify-between">
           {/* Logo - À esquerda */}
-          <div className="flex items-center space-x-3">
-            <Link to="/">
-              <img src="/logoSkillio2.svg" alt="Skillio" className="h-10 w-22 rounded-md object-cover" />
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center gap-3">
+              <img src="/logoSkillio2.svg" alt="Skillio" className="h-10 w-auto rounded-md object-cover" />
+              <span className="font-bold text-lg leading-none hidden sm:inline"></span>
             </Link>
           </div>
 
-          {/* Menu Desktop - Visível apenas em telas grandes */}
-          <nav className="hidden lg:flex items-center space-x-6">
+          {/* Menu Desktop - Visível apenas em telas grandes. Forçar visibilidade em tablets 1920x1200 */}
+          <nav className={`${forceTopNav ? 'flex' : 'hidden lg:flex'} items-center space-x-6`}>
             {location.pathname !== "/" && <Link to="/" className="text-foreground hover:text-primary transition-colors">Início</Link>}
             {isAuthenticated && location.pathname !== "/dashboard" && <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">Meu Desempenho</Link>}
             {location.pathname !== "/subjects" && <Link to="/subjects" className="text-foreground hover:text-primary transition-colors">Explorar</Link>}
@@ -198,8 +285,8 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             {isAuthenticated ? (
               <>
-                {/* Stats - Visíveis apenas em desktop */}
-                <div className="hidden lg:flex items-center gap-4 mr-2">
+                {/* Stats - Visíveis apenas em desktop (ou forçado para tablets 1920x1200) */}
+                <div className={`${forceTopNav ? 'flex' : 'hidden lg:flex'} items-center gap-4 mr-2`}>
                   {isLoading ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
                       <div className="h-4 w-16 bg-muted rounded" />
@@ -268,189 +355,205 @@ const Header = () => {
                 </Link>
 
                 {/* Botão Sair Desktop */}
-                <Button variant="outline" size="sm" className="border-primary/50 hidden lg:inline-flex" onClick={handleLogout}>Sair</Button>
+                <Button variant="outline" size="sm" className={`${forceTopNav ? 'inline-flex' : 'hidden lg:inline-flex'} border-primary/50`} onClick={handleLogout}>Sair</Button>
 
-                {/* Menu Hambúrguer Mobile - Autenticado */}
-                <div className="lg:hidden">
-                  <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Menu className="h-6 w-6" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="w-[280px]">
-                      <SheetHeader>
-                        <SheetTitle>Menu</SheetTitle>
-                      </SheetHeader>
-                      <nav className="flex flex-col space-y-4 mt-6">
-                        {location.pathname !== "/" && (
-                          <Link to="/" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Início
-                          </Link>
-                        )}
-                        {location.pathname !== "/dashboard" && (
-                          <Link to="/dashboard" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Meu Desempenho
-                          </Link>
-                        )}
-                        {location.pathname !== "/subjects" && (
-                          <Link to="/subjects" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Explorar
-                          </Link>
-                        )}
-                        {location.pathname !== "/ranking" && (
-                          <Link to="/ranking" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Ranking
-                          </Link>
-                        )}
-                        {location.pathname !== "/faq" && (
-                          <Link to="/faq" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            FAQ
-                          </Link>
-                        )}
-                        {location.pathname !== "/about" && (
-                          <Link to="/about" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Sobre Nós
-                          </Link>
-                        )}
-                        
-                        {/* Estatísticas Mobile */}
-                        <div className="pt-4 border-t space-y-3">
-                          {isLoading ? (
-                            <div className="space-y-3 animate-pulse">
-                              <div className="h-4 bg-muted rounded w-full" />
-                              <div className="h-4 bg-muted rounded w-3/4" />
-                              <div className="h-4 bg-muted rounded w-full" />
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Vidas</span>
-                                <div className="px-2 py-0.5 rounded-md backdrop-blur-none bg-card/80">
-                                  <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                    <Heart className="w-4 h-4" />
-                                    <span>{hearts}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {streak > 0 && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-muted-foreground">Sequência</span>
-                                  <div className="flex items-center gap-2 text-sm font-bold text-secondary">
-                                    <Flame className="w-4 h-4" />
-                                    <span>{streak} dias</span>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Nível</span>
-                                <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
-                                  <Star className="w-4 h-4" />
-                                  <span>{level}</span>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                  <span>XP</span>
-                                  <span>{xp.toFixed(0)} / {xpForNextLevel}</span>
-                                </div>
-                                <Progress value={progressPercentage} className="h-2" />
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        
-                        {/* Botão Sair - Mobile */}
-                        <div className="pt-4 border-t">
-                          <Button 
-                            variant="outline" 
-                            className="w-full border-primary/50" 
-                            onClick={handleLogout}
-                          >
-                            Sair
-                          </Button>
-                        </div>
-                      </nav>
-                    </SheetContent>
-                  </Sheet>
-                </div>
+                {/* Mobile sheet removed from top header; moved to bottom navigation */}
               </>
             ) : (
               <>
-                {/* Botões de login/cadastro - Visíveis em desktop */}
-                <div className="hidden lg:flex items-center space-x-2">
-                  {location.pathname !== '/login' && <Link to="/login"><Button variant="outline" size="sm">Entrar</Button></Link>}
-                  {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow"><User className="h-4 w-4 mr-1" />Cadastrar</Button></Link>}
+                {/* Botões de login/cadastro - Visíveis em desktop (ou forçado para tablets 1920x1200) */}
+                <div className={`${forceTopNav ? 'flex' : 'hidden lg:flex'} items-center space-x-2`}>
+                  {location.pathname !== '/login' && (
+                    <Link to="/login">
+                      <Button variant="outline" size="sm">
+                        Entrar
+                      </Button>
+                    </Link>
+                  )}
+                  {location.pathname !== '/register' && <Link to="/register"><Button size="sm" className="bg-secondary hover:bg-secondary/90 text-white shadow-orange-glow">Cadastrar</Button></Link>}
                 </div>
 
-                {/* Menu Hambúrguer Mobile - Não Autenticado */}
-                <div className="lg:hidden">
-                  <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Menu className="h-6 w-6" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="w-[280px]">
-                      <SheetHeader>
-                        <SheetTitle>Menu</SheetTitle>
-                      </SheetHeader>
-                      <nav className="flex flex-col space-y-4 mt-6">
-                        {location.pathname !== "/" && (
-                          <Link to="/" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Início
-                          </Link>
-                        )}
-                        {location.pathname !== "/subjects" && (
-                          <Link to="/subjects" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Explorar
-                          </Link>
-                        )}
-                        {location.pathname !== "/ranking" && (
-                          <Link to="/ranking" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Ranking
-                          </Link>
-                        )}
-                        {location.pathname !== "/faq" && (
-                          <Link to="/faq" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            FAQ
-                          </Link>
-                        )}
-                        {location.pathname !== "/about" && (
-                          <Link to="/about" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
-                            Sobre Nós
-                          </Link>
-                        )}
-                        
-                        {/* Botões de autenticação no menu mobile */}
-                        <div className="pt-4 border-t space-y-2">
-                          {location.pathname !== '/login' && (
-                            <Link to="/login" onClick={closeMenu} className="block">
-                              <Button variant="outline" className="w-full">Entrar</Button>
-                            </Link>
-                          )}
-                          {location.pathname !== '/register' && (
-                            <Link to="/register" onClick={closeMenu} className="block">
-                              <Button className="w-full bg-secondary hover:bg-secondary/90 text-white">
-                                <User className="h-4 w-4 mr-2" />
-                                Cadastrar
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      </nav>
-                    </SheetContent>
-                  </Sheet>
-                </div>
+                {/* Mobile sheet removed from top header; moved to bottom navigation */}
               </>
             )}
           </div>
         </div>
       </div>
-    </header>
+     </header>
+      {/* Bottom navigation for small screens (visible below 768px) and detected tablets */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t backdrop-blur-sm ${showBottomNav ? '' : 'hidden'}`}>
+        <div className="container mx-auto px-2 py-1">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+              <img src="/home.svg" alt="Início" className="w-6 h-6 mb-0.5" />
+              <span className="mt-1">Início</span>
+            </Link>
+
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+                <img src="/desempenho.svg" alt="Desempenho" className="w-6 h-6 mb-0.5" />
+                <span className="mt-1">Desempenho</span>
+              </Link>
+            ) : (
+              <Link to="/ranking" className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+                <img src="/ranking.svg" alt="Ranking" className="w-6 h-6 mb-0.5" />
+                <span className="mt-1">Ranking</span>
+              </Link>
+            )}
+
+            {isAuthenticated ? (
+              <Link to="/trilha" className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+                <img src="/foguet1.svg" alt="Trilha" className="w-6 h-6 mb-0.5" />
+                <span className="mt-1">Trilha</span>
+              </Link>
+            ) : showRegisterOption ? (
+              <Link to="/register" onClick={() => { try { localStorage.removeItem('clicked_login'); } catch(e){}; setShowRegisterOption(false); }} className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+                <img src="/register.svg" alt="Cadastrar" className="w-6 h-6 mb-0.5" />
+                <span className="mt-1">Cadastrar</span>
+              </Link>
+            ) : (
+              <Link to="/login" onClick={() => { try { localStorage.setItem('clicked_login','1'); } catch(e){}; setShowRegisterOption(true); }} className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+                <img src="/login.svg" alt="Entrar" className="w-6 h-6 mb-0.5" />
+                <span className="mt-1">Entrar</span>
+              </Link>
+            )}
+
+            <Link to="/subjects" className="flex-1 flex flex-col items-center justify-center py-2 text-[11px] text-foreground hover:text-primary">
+              <img src="/explorar.svg" alt="Explorar" className="w-6 h-6 mb-0.5" />
+              <span className="mt-1">Explorar</span>
+            </Link>
+
+           
+
+            {/* Hamburger menu - opens the sheet (mobile) */}
+            <div className="flex-1 flex items-center justify-center">
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Abrir menu">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col space-y-4 mt-6">
+                    {isAuthenticated && (
+                      <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-2">
+                        <Avatar className="w-5 h-5">
+                          <AvatarImage src={userProfile?.foto || undefined} className="object-cover" />
+                          <AvatarFallback>{userProfile?.first_name ? userProfile.first_name.charAt(0) : 'U'}</AvatarFallback>
+                        </Avatar>
+                        <span>Perfil</span>
+                      </Link>
+                    )}
+                    {/* Links sempre visíveis no menu hambúrguer */}
+                    <Link to="/faq" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
+                      <div className="flex items-center gap-3">
+                        <img src="/faq.svg" alt="FAQ" className="w-4 h-4" />
+                        <span>FAQ</span>
+                      </div>
+                    </Link>
+                    <Link to="/planos" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
+                      <div className="flex items-center gap-3">
+                        <img src="/planos.svg" alt="Planos" className="w-4 h-4" />
+                        <span>Planos</span>
+                      </div>
+                    </Link>
+                    <Link to="/suporte" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
+                      <div className="flex items-center gap-3">
+                        <img src="/surpote.svg" alt="Suporte" className="w-4 h-4" />
+                        <span>Suporte</span>
+                      </div>
+                    </Link>
+                    <Link to="/about" onClick={closeMenu} className="text-foreground hover:text-primary transition-colors py-2">
+                      <div className="flex items-center gap-3">
+                        <img src="/info.svg" alt="Sobre Nós" className="w-4 h-4" />
+                        <span>Sobre Nós</span>
+                      </div>
+                    </Link>
+
+                    {isAuthenticated && (
+                      <div className="pt-4 border-t space-y-3">
+                        {isLoading ? (
+                          <div className="space-y-3 animate-pulse">
+                            <div className="h-4 bg-muted rounded w-full" />
+                            <div className="h-4 bg-muted rounded w-3/4" />
+                            <div className="h-4 bg-muted rounded w-full" />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Vidas</span>
+                              <div className="px-2 py-0.5 rounded-md backdrop-blur-none bg-card/80">
+                                <div className={`flex items-center gap-2 text-sm font-bold ${hearts > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                  <Heart className="w-4 h-4" />
+                                  <span>{hearts}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {streak > 0 && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Sequência</span>
+                                <div className="flex items-center gap-2 text-sm font-bold text-secondary">
+                                  <Flame className="w-4 h-4" />
+                                  <span>{streak} dias</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Nível</span>
+                              <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
+                                <Star className="w-4 h-4" />
+                                <span>{level}</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>XP</span>
+                                <span>{xp.toFixed(0)} / {xpForNextLevel}</span>
+                              </div>
+                              <Progress value={progressPercentage} className="h-2" />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t">
+                      {isAuthenticated ? (
+                        <>
+                          <Link to="/profile" onClick={closeMenu} className="block mb-2">
+                            <Button className="w-full">Perfil</Button>
+                          </Link>
+                          <Button variant="outline" className="w-full border-primary/50" onClick={handleLogout}>Sair</Button>
+                        </>
+                      ) : (
+                        <>
+                          {location.pathname !== '/login' && (
+                            <Link to="/login" onClick={closeMenu} className="block mb-2">
+                              <Button variant="outline" className="w-full">Entrar</Button>
+                            </Link>
+                          )}
+                          {location.pathname !== '/register' && (
+                            <Link to="/register" onClick={closeMenu} className="block">
+                              <Button className="w-full bg-secondary hover:bg-secondary/90 text-white">Cadastrar</Button>
+                            </Link>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </>
   );
 };
 
