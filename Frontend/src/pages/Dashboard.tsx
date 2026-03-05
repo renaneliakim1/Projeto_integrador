@@ -502,18 +502,16 @@ const Dashboard = () => {
                         className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                             quest.is_completed
                                 ? 'bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800'
-                                : 'bg-muted/50 hover:bg-muted cursor-pointer'
+                                : 'bg-muted/50'
                         }`}
-                        onClick={() => !quest.is_completed && completeQuest(quest.quest.id)}
                     >
                         <Checkbox
                             id={quest.quest.id}
                             checked={quest.is_completed}
-                            disabled={quest.is_completed}
-                            onCheckedChange={(checked) => { if (checked && !quest.is_completed) completeQuest(quest.quest.id); }}
+                            disabled
                             className="data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500 pointer-events-none"
                         />
-                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm cursor-pointer ${quest.is_completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground'}`}>
+                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm ${quest.is_completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground'}`}>
                             {quest.quest.description}
                         </label>
                         {!quest.is_completed && <span className="text-xs font-semibold text-emerald-600">+{quest.quest.xp_reward} XP</span>}
@@ -540,18 +538,16 @@ const Dashboard = () => {
                         className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                             quest.is_completed
                                 ? 'bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800'
-                                : 'bg-muted/50 hover:bg-muted cursor-pointer'
+                                : 'bg-muted/50'
                         }`}
-                        onClick={() => !quest.is_completed && completeQuest(quest.quest.id)}
                     >
                         <Checkbox
                             id={quest.quest.id}
                             checked={quest.is_completed}
-                            disabled={quest.is_completed}
-                            onCheckedChange={(checked) => { if (checked && !quest.is_completed) completeQuest(quest.quest.id); }}
+                            disabled
                             className="data-[state=checked]:border-violet-500 data-[state=checked]:bg-violet-500 pointer-events-none"
                         />
-                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm cursor-pointer ${quest.is_completed ? 'text-violet-700 dark:text-violet-400' : 'text-foreground'}`}>
+                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm ${quest.is_completed ? 'text-violet-700 dark:text-violet-400' : 'text-foreground'}`}>
                             {quest.quest.description}
                         </label>
                         {!quest.is_completed && <span className="text-xs font-semibold text-violet-600">+{quest.quest.xp_reward} XP</span>}
@@ -578,18 +574,16 @@ const Dashboard = () => {
                         className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                             quest.is_completed
                                 ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800'
-                                : 'bg-muted/50 hover:bg-muted cursor-pointer'
+                                : 'bg-muted/50'
                         }`}
-                        onClick={() => !quest.is_completed && completeQuest(quest.quest.id)}
                     >
                         <Checkbox
                             id={quest.quest.id}
                             checked={quest.is_completed}
-                            disabled={quest.is_completed}
-                            onCheckedChange={(checked) => { if (checked && !quest.is_completed) completeQuest(quest.quest.id); }}
+                            disabled
                             className="data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-500 pointer-events-none"
                         />
-                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm cursor-pointer ${quest.is_completed ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
+                        <label htmlFor={quest.quest.id} className={`flex-1 text-sm ${quest.is_completed ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
                             {quest.quest.description}
                         </label>
                         {!quest.is_completed && <span className="text-xs font-semibold text-amber-600">+{quest.quest.xp_reward} XP</span>}
