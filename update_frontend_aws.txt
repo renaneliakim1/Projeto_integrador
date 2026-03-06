@@ -1,0 +1,57 @@
+echo "════════════════════════════════════════"
+echo "  🚀 DEPLOY BACKEND SKILLIO"
+echo "════════════════════════════════════════"
+echo ""
+
+# Ir para o projeto
+cd ~/Projeto_integrador
+
+# Atualizar código
+echo "📥 Baixando código do GitHub..."
+git fetch --all
+git reset --hard origin/Renan---AWS-Free-Tier
+git clean -fd
+
+# Carregar variáveis de ambiente
+echo "🔧 Carregando configurações..."
+set -a
+source .env
+set +a
+
+# Criar pastas de logs (se não existir)
+sudo mkdir -p /var/log/django
+sudo chown -R ubuntu:ubuntu /var/log/django
+mkdir -p ~/Projeto_integrador/backend/logs
+
+# Ir para backend
+cd backend
+
+# Ativar venv
+source ~/venv/bin/activate
+
+# Atualizar dependências
+echo "📦 Atualizando dependências..."
+pip install -r requirements_prod.txt --upgrade --quiet
+
+# Migrações
+echo "🗄️  Aplicando migrações..."
+python manage.py migrate --settings=core.settings_production
+
+# Coletar estáticos
+echo "📁 Coletando arquivos estáticos..."
+python manage.py collectstatic --noinput --settings=core.settings_production
+
+# Reiniciar serviço
+echo "🔄 Reiniciando serviço..."
+sudo systemctl restart skillio
+
+# Verificar status
+echo ""
+echo "════════════════════════════════════════"
+echo "  ✅ DEPLOY CONCLUÍDO!"
+echo "════════════════════════════════════════"
+echo ""
+sudo systemctl status skillio --no-pager -l
+
+echo ""
+echo "🌐 API: http://54.227.194.67:8000"

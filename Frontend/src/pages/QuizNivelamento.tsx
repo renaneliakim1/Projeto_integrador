@@ -113,7 +113,7 @@ async function gerarPerguntasGemini(escolaridade: string, foco: string, idade: n
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     const prompt = `
       Você é um especialista em educação e criação de conteúdo didático.
       Sua tarefa é gerar um quiz de nivelamento com EXATAMENTE 25 perguntas de múltipla escolha para um estudante com as seguintes características:
